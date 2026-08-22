@@ -104,4 +104,4 @@
 - [x] Analisar os cinco modelos comerciais fornecidos e mapear seus objetivos de automação no WhatsApp.
 - [x] Criar cinco fluxos individuais de mensagens para IA, com regras de cadência, resposta, qualificação, follow-up e transbordo humano.
 - [x] Gerar e validar os cinco PDFs de fluxos de WhatsApp e entregá-los separadamente, na ordem dos modelos.
-- [ ] Enviar separadamente ao usuário o PDF do Modelo 5 de demonstração, qualificação e piloto.
+- [x] Enviar separadamente ao usuário o PDF do Modelo 5 de demonstração, qualificação e piloto.
