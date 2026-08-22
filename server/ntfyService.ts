@@ -30,9 +30,14 @@ export async function sendNtfyNotification(event: NtfyEvent) {
     const topic = config.topic.trim();
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(topic)) throw new Error("Tópico ntfy inválido.");
     const target = validateWebhookUrl(`${serverUrl}/${topic}`);
-    const headers: Record<string, string> = { "content-type": "application/json; charset=utf-8" };
+    const headers: Record<string, string> = {
+      "content-type": "text/plain; charset=utf-8",
+      "title": event.title,
+      "priority": event.priority ?? "default",
+      "tags": (event.tags ?? ["bell", "altixdev"]).join(","),
+    };
     if (config.token) headers.authorization = `Bearer ${config.token}`;
-    const response = await fetch(target, { method: "POST", headers, body: JSON.stringify({ topic, title: event.title, message: event.message, priority: event.priority ?? "default", tags: event.tags ?? ["bell", "altixdev"] }) });
+    const response = await fetch(target, { method: "POST", headers, body: event.message });
     await recordIntegrationCheck("ntfy", response.status, response.ok ? "Notificação entregue." : "ntfy respondeu com erro.");
     return { skipped: false, ok: response.ok, status: response.status };
   } catch {

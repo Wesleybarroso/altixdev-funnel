@@ -23,13 +23,13 @@ describe("notificações ntfy", () => {
     expect(composeNtfyEvent({ eventType: "webhook.tested", status: "error", message: "Falha" })).toEqual(expect.objectContaining({ title: "ALTIXDEV | Atencao necessaria", priority: "high" }));
   });
 
-  it("envia JSON UTF-8 para preservar acentos e evita caracteres quebrados", async () => {
-    await expect(sendNtfyNotification({ title: "Altixdev · Integração verificada", message: "A conexão está funcionando.", priority: "default", tags: ["electric_plug", "white_check_mark"] })).resolves.toEqual({ skipped: false, ok: true, status: 200 });
+  it("envia texto UTF-8 com cabeçalhos ntfy e não exibe JSON bruto", async () => {
+    await expect(sendNtfyNotification({ title: "ALTIXDEV | Integracao verificada", message: "Conexao com o painel confirmada.", priority: "default", tags: ["electric_plug", "white_check_mark"] })).resolves.toEqual({ skipped: false, ok: true, status: 200 });
 
     const [target, request] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(target).toBe("https://ntfy.sh/altixdev_private");
-    expect(request.headers).toEqual({ "content-type": "application/json; charset=utf-8" });
-    expect(JSON.parse(request.body)).toEqual(expect.objectContaining({ title: "Altixdev · Integração verificada", message: "A conexão está funcionando.", tags: ["electric_plug", "white_check_mark"] }));
+    expect(request.headers).toEqual({ "content-type": "text/plain; charset=utf-8", title: "ALTIXDEV | Integracao verificada", priority: "default", tags: "electric_plug,white_check_mark" });
+    expect(request.body).toBe("Conexao com o painel confirmada.");
     expect(databaseMocks.recordIntegrationCheck).toHaveBeenCalledWith("ntfy", 200, "Notificação entregue.");
   });
 });

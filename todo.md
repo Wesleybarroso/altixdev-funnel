@@ -69,3 +69,7 @@
 - [x] Refinar títulos, mensagens, tags e codificação das notificações ntfy por tipo de evento.
 - [ ] Enviar um novo teste ntfy no celular para confirmar a nova aparência, os ícones por evento e a codificação correta.
 - [x] Corrigir o envio específico do botão de teste ntfy para usar texto ASCII profissional e o novo formato JSON.
+- [ ] Corrigir a compatibilidade do envio ntfy para que o cliente atual não exiba o JSON bruto no iPhone.
+- [ ] Avaliar o aplicativo indicado pelo usuário como alternativa para receber notificações profissionais.
+- [ ] Publicar a correção ntfy e validar no iPhone que a mensagem não exibe JSON bruto.
+- [ ] Comparar explicitamente ntfy e Chanify, incluindo formato, autenticação, experiência no iPhone e esforço de integração, para registrar uma recomendação clara.
