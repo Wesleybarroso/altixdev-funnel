@@ -41,4 +41,15 @@ describe("login administrativo por credenciais", () => {
     await expect(caller.auth.adminLogin({ email, password: "senha-incorreta" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(cookies).toHaveLength(0);
   });
+
+  it("retorna acesso liberado ao painel quando a sessão administrativa está presente", async () => {
+    const { ctx } = createLoginContext();
+    ctx.passwordAdmin = true;
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(caller.auth.adminStatus()).resolves.toMatchObject({
+      authenticated: true,
+      email: process.env.ALTIXDEV_ADMIN_EMAIL,
+    });
+  });
 });

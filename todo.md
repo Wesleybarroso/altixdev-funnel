@@ -24,4 +24,9 @@
 - [x] Implementar sessão segura, encerramento de sessão e bloqueio do painel para acessos não autenticados.
 - [x] Testar o login administrativo, a recusa de credenciais inválidas e a proteção do painel.
 - [x] Validar visualmente o novo acesso por e-mail e senha.
-- [ ] Salvar o checkpoint atualizado do login privado por e-mail e senha.
+- [x] Salvar o checkpoint atualizado do login privado por e-mail e senha.
+- [x] Investigar por que uma autenticação válida não atualiza a rota para o painel comercial.
+- [x] Corrigir a atualização de sessão e encaminhar o administrador ao painel após login válido.
+- [x] Criar teste de regressão para o status administrativo após autenticação.
+- [x] Validar o fluxo completo de login, da credencial ao status administrativo liberado.
+- [ ] Salvar o checkpoint corrigido do fluxo de login.

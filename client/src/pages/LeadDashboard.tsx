@@ -27,8 +27,8 @@ export default function LeadDashboard() {
   const adminLogin = trpc.auth.adminLogin.useMutation({
     onSuccess: () => {
       setPassword("");
-      utils.auth.adminStatus.invalidate();
       toast.success("Acesso liberado.");
+      window.location.assign("/painel");
     },
     onError: () => toast.error("E-mail ou senha inválidos."),
   });
