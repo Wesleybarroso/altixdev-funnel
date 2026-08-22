@@ -13,4 +13,9 @@
 - [x] Escrever e executar testes Vitest para os procedimentos de lead e permissões de administrador.
 - [x] Validar o fluxo público, o painel privado, a responsividade e os estados de erro por capturas de tela.
 - [x] Validar visualmente o painel autenticado do administrador com métricas comerciais renderizadas.
-- [ ] Salvar um checkpoint final e orientar a publicação e a conexão do domínio altixdev.com.br.
+- [x] Salvar um checkpoint final e orientar a publicação e a conexão do domínio altixdev.com.br.
+- [x] Revisar a landing page para identificar fricções e oportunidades de aumento de conversão.
+- [x] Tornar a oferta inicial e os resultados esperados mais específicos, sem promessas não verificáveis.
+- [x] Adicionar elementos de confiança legítimos, redução de objeções e um caminho mais claro até a conversa.
+- [x] Refinar o diagnóstico guiado com microcopy de conversão e reforço de valor antes da captura.
+- [x] Validar visualmente a versão refinada em desktop e mobile, testar e salvar novo checkpoint.
