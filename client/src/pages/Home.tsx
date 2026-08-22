@@ -1,5 +1,5 @@
 import { ArrowRight, Bot, Check, CheckCircle2, CircleDotDashed, Code2, MessageCircle, MoveRight, ShieldCheck, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -29,6 +29,21 @@ const diagnosticDeliverables = ["Diagnóstico do principal gargalo", "Direção 
 export default function Home() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
+  const analyticsTag = trpc.analytics.publicTag.useQuery(undefined, { refetchOnWindowFocus: false });
+  useEffect(() => {
+    const measurementId = analyticsTag.data?.measurementId;
+    if (!measurementId || document.querySelector(`script[data-altixdev-ga="${measurementId}"]`)) return;
+    const analyticsWindow = window as Window & { dataLayer?: unknown[][]; gtag?: (...args: unknown[]) => void };
+    analyticsWindow.dataLayer = analyticsWindow.dataLayer ?? [];
+    analyticsWindow.gtag = analyticsWindow.gtag ?? ((...args: unknown[]) => analyticsWindow.dataLayer?.push(args));
+    analyticsWindow.gtag("js", new Date());
+    analyticsWindow.gtag("config", measurementId, { anonymize_ip: true });
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+    script.dataset.altixdevGa = measurementId;
+    document.head.appendChild(script);
+  }, [analyticsTag.data?.measurementId]);
   const createLead = trpc.leads.create.useMutation({
     onSuccess: ({ diagnosticSummary }) => {
       const message = `Olá, Wesley! Concluí o diagnóstico da Altixdev e gostaria de conversar. ${diagnosticSummary}`;

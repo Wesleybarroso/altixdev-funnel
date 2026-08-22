@@ -57,3 +57,53 @@ export const leads = mysqlTable("leads", {
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+/**
+ * Destinos externos configurados pelo administrador. Os dados sensíveis são
+ * persistidos cifrados; a interface recebe apenas uma representação segura.
+ */
+export const webhooks = mysqlTable("webhooks", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  urlCiphertext: text("urlCiphertext").notNull(),
+  authHeaderName: varchar("authHeaderName", { length: 100 }),
+  secretCiphertext: text("secretCiphertext"),
+  enabled: boolean("enabled").notNull().default(true),
+  lastTestAt: timestamp("lastTestAt"),
+  lastStatus: int("lastStatus"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Webhook = typeof webhooks.$inferSelect;
+export type InsertWebhook = typeof webhooks.$inferInsert;
+
+/** Histórico auditável das ações comerciais e integrações do painel. */
+export const eventLogs = mysqlTable("eventLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  category: varchar("category", { length: 48 }).notNull(),
+  eventType: varchar("eventType", { length: 96 }).notNull(),
+  status: mysqlEnum("status", ["info", "success", "warning", "error"]).notNull().default("info"),
+  message: text("message").notNull(),
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EventLog = typeof eventLogs.$inferSelect;
+export type InsertEventLog = typeof eventLogs.$inferInsert;
+
+/** Configurações de integrações externas, cifradas em repouso no banco. */
+export const integrationConfigs = mysqlTable("integrationConfigs", {
+  id: int("id").autoincrement().primaryKey(),
+  provider: varchar("provider", { length: 48 }).notNull().unique(),
+  configCiphertext: text("configCiphertext").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  lastCheckAt: timestamp("lastCheckAt"),
+  lastStatus: int("lastStatus"),
+  lastMessage: varchar("lastMessage", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type IntegrationConfig = typeof integrationConfigs.$inferSelect;
+export type InsertIntegrationConfig = typeof integrationConfigs.$inferInsert;

@@ -1,6 +1,6 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertLead, InsertUser, leads, users } from "../drizzle/schema";
+import { InsertEventLog, InsertIntegrationConfig, InsertLead, InsertUser, InsertWebhook, eventLogs, integrationConfigs, leads, users, webhooks } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -123,4 +123,86 @@ export async function updateLead(
   if (!db) throw new Error("Banco de dados indisponível.");
 
   await db.update(leads).set(changes).where(eq(leads.id, id));
+}
+
+export async function getLeadById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const records = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
+  return records[0];
+}
+
+export async function listWebhooks() {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  return db.select().from(webhooks).orderBy(desc(webhooks.createdAt));
+}
+
+export async function getWebhookById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const records = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1);
+  return records[0];
+}
+
+export async function createWebhook(webhook: InsertWebhook) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const result = await db.insert(webhooks).values(webhook);
+  return Number(result[0].insertId);
+}
+
+export async function updateWebhook(id: number, changes: Partial<Pick<InsertWebhook, "name" | "urlCiphertext" | "authHeaderName" | "secretCiphertext" | "enabled">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.update(webhooks).set(changes).where(eq(webhooks.id, id));
+}
+
+export async function deleteWebhook(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.delete(webhooks).where(eq(webhooks.id, id));
+}
+
+export async function recordWebhookTest(id: number, status: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.update(webhooks).set({ lastTestAt: new Date(), lastStatus: status }).where(eq(webhooks.id, id));
+}
+
+export async function createEventLog(event: InsertEventLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const result = await db.insert(eventLogs).values(event);
+  return Number(result[0].insertId);
+}
+
+export async function listEventLogs(filters?: { category?: string; status?: (typeof eventLogs.status.enumValues)[number]; limit?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const conditions = [];
+  if (filters?.category) conditions.push(eq(eventLogs.category, filters.category));
+  if (filters?.status) conditions.push(eq(eventLogs.status, filters.status));
+  return db.select().from(eventLogs).where(conditions.length ? and(...conditions) : undefined).orderBy(desc(eventLogs.createdAt)).limit(filters?.limit ?? 250);
+}
+
+export async function getIntegrationConfigByProvider(provider: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  const records = await db.select().from(integrationConfigs).where(eq(integrationConfigs.provider, provider)).limit(1);
+  return records[0];
+}
+
+export async function upsertIntegrationConfig(config: InsertIntegrationConfig) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.insert(integrationConfigs).values(config).onDuplicateKeyUpdate({
+    set: { configCiphertext: config.configCiphertext, enabled: config.enabled, lastMessage: "Configuração atualizada." },
+  });
+}
+
+export async function recordIntegrationCheck(provider: string, status: number | null, message: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.update(integrationConfigs).set({ lastCheckAt: new Date(), lastStatus: status, lastMessage: message }).where(eq(integrationConfigs.provider, provider));
 }

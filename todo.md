@@ -33,4 +33,32 @@
 - [x] Diagnosticar por que o navegador não mantém ou não envia a sessão administrativa após o login.
 - [x] Ajustar os atributos do cookie e o fluxo de sessão para funcionar no ambiente publicado e em pré-visualizações.
 - [x] Validar o login completo por verificação HTTP ponta a ponta, incluindo o token persistido que libera o status administrativo.
-- [ ] Salvar a correção definitiva do login.
+- [x] Salvar a correção definitiva do login.
+- [x] Modelar e aplicar o banco de dados para webhooks configuráveis do n8n.
+- [x] Criar procedimentos administrativos para cadastrar, editar, ativar, excluir e testar webhooks sem expor o segredo.
+- [x] Adicionar interface de configurações de webhook ao painel de oportunidades.
+- [x] Implementar exportação de leads em CSV e JSON, com campos de diagnóstico compatíveis com CRM.
+- [x] Implementar envio manual de lead ao webhook selecionado e apresentar retorno seguro ao administrador.
+- [x] Escrever testes para permissões, ciclo de vida de webhooks, exportação e envio de teste.
+- [ ] Validar visualmente as configurações e exportações e salvar o checkpoint atualizado.
+- [x] Definir credenciais e contratos seguros para Google Sheets, PostgreSQL e ntfy.
+- [x] Criar gestão de integrações no painel, com configuração, teste, ativação, edição e exclusão quando aplicável.
+- [ ] Sincronizar dados de lead e atualizações comerciais com Google Sheets e PostgreSQL configurados.
+- [x] Enviar notificações ntfy sobre novos leads, atualizações, exportações e falhas de conexão.
+- [x] Exibir status e última verificação das integrações no painel.
+- [ ] Testar integrações, notificações e proteções administrativas antes do checkpoint final.
+- [x] Modelar e aplicar o banco de dados para logs de eventos e configurações diretas de ntfy.
+- [x] Registrar no histórico novos leads, mudanças de CRM, exportações, testes e falhas de integração.
+- [x] Criar a aba lateral de logs com filtros, status e exportação em CSV e JSON.
+- [x] Criar configuração protegida de ntfy no painel, incluindo teste de notificação para o celular.
+- [ ] Testar a publicação direta no ntfy e validar as permissões administrativas antes do checkpoint.
+- [x] Configurar dependências e credenciais protegidas para conexão direta com Google Sheets e PostgreSQL.
+- [ ] Criar e testar clientes servidor-a-servidor para Google Sheets e PostgreSQL com acesso mínimo necessário.
+- [x] Adicionar formulários no painel para configurar, testar, editar e desativar Google Sheets e PostgreSQL.
+- [x] Implementar sincronização manual de leads com as duas integrações e registrar os resultados no histórico.
+- [x] Exibir status de saúde e notificar falhas das integrações por ntfy quando configurado.
+- [ ] Validar a configuração real com as credenciais do proprietário e salvar a versão integrada.
+- [x] Adicionar integração segura com Google Analytics 4, incluindo configuração, teste de conexão, tag opcional na landing page e painel de métricas.
+- [ ] Validar Google Analytics, Google Sheets, PostgreSQL e ntfy com as credenciais reais do proprietário, sem registrar segredos em logs.
+- [x] Cobrir no router os fluxos de criar, editar, excluir, testar e enviar lead por webhook, sem expor segredos e com registro de eventos.
+- [x] Cobrir a exportação CSV/JSON de leads e logs, incluindo o registro de `logs.recordExport`.

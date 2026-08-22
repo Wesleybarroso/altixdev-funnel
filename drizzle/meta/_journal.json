@@ -15,6 +15,20 @@
       "when": 1787395264377,
       "tag": "0001_supreme_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1787399144503,
+      "tag": "0002_dizzy_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1787399642152,
+      "tag": "0003_secret_glorian",
+      "breakpoints": true
     }
   ]
 }

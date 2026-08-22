@@ -3,11 +3,18 @@ import type { TrpcContext } from "./_core/context";
 
 const databaseMocks = vi.hoisted(() => ({
   createLead: vi.fn(),
+  createEventLog: vi.fn(),
   listLeads: vi.fn(),
   updateLead: vi.fn(),
 }));
 
+const ntfyMocks = vi.hoisted(() => ({
+  sendNtfyNotification: vi.fn(),
+  validateNtfyConfig: vi.fn(),
+}));
+
 vi.mock("./db", () => databaseMocks);
+vi.mock("./ntfyService", () => ntfyMocks);
 
 import { appRouter } from "./routers";
 
