@@ -22,6 +22,11 @@ const ntfyMocks = vi.hoisted(() => ({
   validateNtfyConfig: vi.fn(),
 }));
 
+const chanifyMocks = vi.hoisted(() => ({
+  sendChanifyNotification: vi.fn(),
+  validateChanifyConfig: vi.fn(),
+}));
+
 const googleAnalyticsMocks = vi.hoisted(() => ({
   getGoogleAnalyticsOverview: vi.fn(),
   testGoogleAnalytics: vi.fn(),
@@ -39,6 +44,7 @@ const webhookCryptoMocks = vi.hoisted(() => ({
 
 vi.mock("./db", () => databaseMocks);
 vi.mock("./ntfyService", () => ntfyMocks);
+vi.mock("./chanifyService", () => chanifyMocks);
 vi.mock("./webhookService", () => webhookCryptoMocks);
 vi.mock("./googleAnalyticsService", () => googleAnalyticsMocks);
 
@@ -79,6 +85,25 @@ describe("integrações e logs", () => {
       enabled: true,
     }));
     expect(databaseMocks.createEventLog).toHaveBeenCalledWith(expect.objectContaining({ eventType: "ntfy.configured" }));
+  });
+
+  it("protege a configuração Chanify e registra o teste sem expor o token", async () => {
+    const anonymous = appRouter.createCaller(createContext(false));
+    await expect(anonymous.chanify.get()).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    databaseMocks.getIntegrationConfigByProvider.mockResolvedValue(undefined);
+    chanifyMocks.validateChanifyConfig.mockReturnValue({ token: "chanify-secret-token" });
+    const caller = appRouter.createCaller(createContext(true));
+    await expect(caller.chanify.save({ token: "chanify-secret-token", enabled: true })).resolves.toEqual({ success: true });
+    expect(databaseMocks.upsertIntegrationConfig).toHaveBeenCalledWith(expect.objectContaining({ provider: "chanify", configCiphertext: expect.stringContaining("encrypted:"), enabled: true }));
+    expect(databaseMocks.createEventLog).toHaveBeenCalledWith(expect.objectContaining({ eventType: "chanify.configured" }));
+    expect(databaseMocks.createEventLog).not.toHaveBeenCalledWith(expect.objectContaining({ metadata: expect.stringContaining("chanify-secret-token") }));
+
+    databaseMocks.getIntegrationConfigByProvider.mockResolvedValue({ enabled: true, configCiphertext: "encrypted:chanify" });
+    chanifyMocks.sendChanifyNotification.mockResolvedValue({ ok: true, status: 200 });
+    await expect(caller.chanify.test()).resolves.toEqual({ ok: true, status: 200 });
+    expect(ntfyMocks.composeNtfyEvent).toHaveBeenCalledWith(expect.objectContaining({ eventType: "chanify.tested", status: "success" }));
+    expect(chanifyMocks.sendChanifyNotification).toHaveBeenCalledWith(expect.objectContaining({ message: "Conexao com o painel confirmada. Alertas comerciais estao prontos." }));
   });
 
   it("bloqueia a configuração Google Analytics sem sessão administrativa", async () => {

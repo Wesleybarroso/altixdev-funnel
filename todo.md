@@ -73,3 +73,8 @@
 - [ ] Avaliar o aplicativo indicado pelo usuário como alternativa para receber notificações profissionais.
 - [ ] Publicar a correção ntfy e validar no iPhone que a mensagem não exibe JSON bruto.
 - [ ] Comparar explicitamente ntfy e Chanify, incluindo formato, autenticação, experiência no iPhone e esforço de integração, para registrar uma recomendação clara.
+- [x] Adicionar configuração segura do Chanify no painel usando token cifrado, status de saúde e botão de teste.
+- [x] Encaminhar alertas de novos leads, CRM, exportações e integrações ativas ao Chanify quando configurado.
+- [x] Exibir no cartão Chanify um indicador explícito de saúde com sucesso, erro ou sem teste.
+- [ ] Validar visualmente o cartão Chanify no painel depois de adicionar o indicador de saúde.
+- [ ] Validar o Chanify no iPhone e definir se o ntfy permanecerá ativo ou será desativado.

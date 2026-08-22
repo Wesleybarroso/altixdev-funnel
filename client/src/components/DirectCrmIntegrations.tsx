@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import ChanifyIntegrationCard from "@/components/ChanifyIntegrationCard";
 import { BarChart3, CheckCircle2, Database, RefreshCw, Send, Settings2, Table2, TestTube2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -98,6 +99,8 @@ export default function DirectCrmIntegrations() {
         <ActionButtons savePending={savePostgres.isPending} configured={postgres?.configured} testing={testConnection.isPending} onTest={() => testConnection.mutate({ provider: "postgres" })} />
       </form><StatusLine value={postgres?.lastCheckAt} message={postgres?.lastMessage} prefix={postgres?.host ? `Destino: ${postgres.host} · ` : ""} />
     </article>
+
+    <ChanifyIntegrationCard />
 
     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,.04)] xl:col-span-2">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2"><BarChart3 size={18} className="text-[#1D4ED8]" /><h2 className="font-serif text-2xl">Google Analytics 4</h2></div><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Visualize no painel o desempenho da propriedade GA4 nos últimos 30 dias. A credencial fica cifrada no servidor e não é exibida novamente.</p></div><StatusBadge active={analytics?.enabled} /></div>

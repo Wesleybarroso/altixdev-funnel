@@ -8,6 +8,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import { createLeadWebhookPayload, createWebhookTestPayload, decryptWebhookValue, encryptWebhookValue, postWebhook, validateWebhookUrl } from "./webhookService";
 import { composeNtfyEvent, sendNtfyNotification, validateNtfyConfig } from "./ntfyService";
+import { sendChanifyNotification, validateChanifyConfig } from "./chanifyService";
 import { syncLeadToGoogleSheets, syncLeadToPostgres, testGoogleSheets, testPostgres, validateGoogleConfig, validatePostgresConfig } from "./directCrmService";
 import { getGoogleAnalyticsOverview, testGoogleAnalytics, validateGoogleAnalyticsConfig } from "./googleAnalyticsService";
 
@@ -33,7 +34,8 @@ async function recordEvent(input: { category: string; eventType: string; status:
     metadata: input.metadata ? JSON.stringify(input.metadata) : null,
   });
   if (input.notify) {
-    void sendNtfyNotification(composeNtfyEvent(input));
+    const notification = composeNtfyEvent(input);
+    void Promise.all([sendNtfyNotification(notification), sendChanifyNotification(notification)]);
   }
 }
 
@@ -399,6 +401,41 @@ export const appRouter = router({
     test: adminProcedure.mutation(async () => {
       const result = await sendNtfyNotification(composeNtfyEvent({ eventType: "ntfy.tested", status: "success", message: "Conexao com o painel confirmada. Alertas de leads, CRM e integracoes estao prontos." }));
       await recordEvent({ category: "integration", eventType: "ntfy.tested", status: result.ok ? "success" : "error", message: result.ok ? "Teste de notificação ntfy enviado." : "Falha ao testar a notificação ntfy.", metadata: { status: result.status } });
+      return result;
+    }),
+  }),
+  chanify: router({
+    get: adminProcedure.query(async () => {
+      const record = await getIntegrationConfigByProvider("chanify");
+      if (!record) return { configured: false, enabled: false, hasToken: false, lastCheckAt: null, lastStatus: null, lastMessage: null };
+      try {
+        const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as { token?: string };
+        return { configured: true, enabled: record.enabled, hasToken: Boolean(config.token), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
+      } catch {
+        return { configured: true, enabled: false, hasToken: false, lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: "Configuração indisponível. Edite e salve novamente." };
+      }
+    }),
+    save: adminProcedure
+      .input(z.object({ token: z.string().max(512).optional(), removeToken: z.boolean().default(false), enabled: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const current = await getIntegrationConfigByProvider("chanify");
+        let existingToken = "";
+        if (current) {
+          try { existingToken = (JSON.parse(decryptWebhookValue(current.configCiphertext)) as { token?: string }).token ?? ""; } catch { existingToken = ""; }
+        }
+        let config;
+        try {
+          config = validateChanifyConfig({ token: input.removeToken ? "" : input.token?.trim() || existingToken });
+        } catch (error) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Configuração Chanify inválida." });
+        }
+        await upsertIntegrationConfig({ provider: "chanify", configCiphertext: encryptWebhookValue(JSON.stringify(config)), enabled: input.enabled });
+        await recordEvent({ category: "integration", eventType: "chanify.configured", status: "success", message: "Configuração Chanify atualizada.", metadata: { enabled: input.enabled } });
+        return { success: true } as const;
+      }),
+    test: adminProcedure.mutation(async () => {
+      const result = await sendChanifyNotification(composeNtfyEvent({ eventType: "chanify.tested", status: "success", message: "Conexao com o painel confirmada. Alertas comerciais estao prontos." }));
+      await recordEvent({ category: "integration", eventType: "chanify.tested", status: result.ok ? "success" : "error", message: result.ok ? "Teste de notificação Chanify enviado." : "Falha ao testar a notificação Chanify.", metadata: { status: result.status } });
       return result;
     }),
   }),
