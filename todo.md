@@ -105,3 +105,11 @@
 - [x] Criar cinco fluxos individuais de mensagens para IA, com regras de cadência, resposta, qualificação, follow-up e transbordo humano.
 - [x] Gerar e validar os cinco PDFs de fluxos de WhatsApp e entregá-los separadamente, na ordem dos modelos.
 - [x] Enviar separadamente ao usuário o PDF do Modelo 5 de demonstração, qualificação e piloto.
+- [x] Identificar e corrigir o endereço de e-mail exibido no rodapé da landing page.
+- [x] Implementar seletor acessível com traduções da landing page para inglês, espanhol, português de Portugal, alemão, neerlandês, russo, norueguês e irlandês.
+- [ ] Testar a troca de idiomas em desktop e mobile, atualizar testes e publicar a mudança no repositório GitHub privado.
+- [x] Internacionalizar os textos remanescentes da interface pública e revalidar a landing em idioma não português.
+- [x] Localizar placeholders e textos públicos ainda codificados diretamente na landing e movê-los para o catálogo de idiomas.
+- [x] Validar objetivamente os textos visíveis da landing em um idioma não português.
+- [x] Revalidar visualmente a landing com o seletor definido para um idioma não português e registrar hero, formulário e rodapé traduzidos.
+- [x] Inspecionar explicitamente as capturas em inglês para confirmar hero, formulário e rodapé traduzidos em desktop e celular.
