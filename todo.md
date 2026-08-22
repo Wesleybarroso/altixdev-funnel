@@ -88,3 +88,14 @@
 - [ ] Corrigir a inicialização do Chanify no EasyPanel com modo persistente e volume de dados, sem exigir segredo de modo sem estado.
 - [ ] Resolver o timeout de acesso ao Docker Hub no servidor EasyPanel antes de baixar a imagem Chanify.
 - [x] Preparar fallback de implantação Chanify via release oficial após os timeouts persistentes do Docker Hub.
+- [ ] Diagnosticar a conexão WebSocket do console EasyPanel e confirmar o status real do serviço Chanify.
+- [x] Reempacotar o fallback com Dockerfile e binário Chanify na raiz do arquivo de upload para garantir o contexto de build do EasyPanel.
+- [ ] Verificar a origem/arquivo efetivamente selecionado no EasyPanel após a substituição do pacote de fallback.
+- [x] Preparar uma origem GitHub reproduzível para o fallback Chanify e configurar o EasyPanel por repositório.
+- [ ] Configurar no EasyPanel a fonte do serviço Chanify para `Wesleybarroso/altixdev-chanify-easypanel`, branch `master` e builder Dockerfile.
+- [x] Confirmar o acesso público sem autenticação ao repositório `Wesleybarroso/altixdev-chanify-easypanel` após a alteração de visibilidade.
+- [x] Tornar público o repositório `Wesleybarroso/altixdev-chanify-easypanel` a pedido do proprietário e confirmar o acesso sem autenticação.
+- [ ] Validar o deploy do Chanify no EasyPanel usando a origem GitHub e confirmar a inicialização pelo domínio público.
+- [ ] Corrigir a inicialização do contêiner Chanify no EasyPanel após o estado persistente de espera do serviço.
+- [ ] Criar um repositório GitHub privado com todos os arquivos atuais do projeto Altixdev e confirmar o envio remoto.
+- [x] Incorporar o comando persistente do Chanify no Dockerfile do repositório para eliminar dependência da substituição de comando do EasyPanel.
