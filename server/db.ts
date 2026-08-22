@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertLead, InsertUser, leads, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,38 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createLead(lead: InsertLead) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+
+  const result = await db.insert(leads).values(lead);
+  return Number(result[0].insertId);
+}
+
+export async function listLeads(filters?: { search?: string; stage?: (typeof leads.stage.enumValues)[number] }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+
+  const conditions = [];
+  if (filters?.stage) conditions.push(eq(leads.stage, filters.stage));
+  if (filters?.search?.trim()) {
+    const query = `%${filters.search.trim()}%`;
+    conditions.push(or(like(leads.name, query), like(leads.email, query), like(leads.company, query))!);
+  }
+
+  return db
+    .select()
+    .from(leads)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(leads.createdAt));
+}
+
+export async function updateLead(
+  id: number,
+  changes: Partial<Pick<InsertLead, "stage" | "priority" | "notes" | "nextStep">>,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+
+  await db.update(leads).set(changes).where(eq(leads.id, id));
+}

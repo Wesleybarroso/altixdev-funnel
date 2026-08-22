@@ -1,7 +1,24 @@
 import { COOKIE_NAME } from "@shared/const";
+import { z } from "zod";
+import { createLead, listLeads, updateLead } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+
+const leadStageSchema = z.enum(["new", "diagnostic", "proposal", "won", "lost"]);
+const leadPrioritySchema = z.enum(["low", "medium", "high"]);
+
+const leadInputSchema = z.object({
+  name: z.string().min(2).max(120),
+  email: z.string().email().max(320),
+  phone: z.string().min(8).max(48),
+  company: z.string().max(160).optional(),
+  objective: z.string().min(1).max(120),
+  currentChannel: z.string().min(1).max(120),
+  bottleneck: z.string().min(1).max(160),
+  urgency: z.string().min(1).max(64),
+  consent: z.literal(true),
+});
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -16,13 +33,55 @@ export const appRouter = router({
       } as const;
     }),
   }),
+  leads: router({
+    create: publicProcedure.input(leadInputSchema).mutation(async ({ input }) => {
+      const diagnosticSummary = [
+        `Objetivo: ${input.objective}`,
+        `Canal atual: ${input.currentChannel}`,
+        `Gargalo: ${input.bottleneck}`,
+        `Urgência: ${input.urgency}`,
+      ].join(" · ");
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+      const id = await createLead({
+        ...input,
+        company: input.company?.trim() || null,
+        source: "landing-page",
+        diagnosticSummary,
+        consentAt: new Date(),
+        whatsappRedirectedAt: new Date(),
+      });
+
+      return { id, diagnosticSummary };
+    }),
+    list: adminProcedure
+      .input(z.object({ search: z.string().max(120).optional(), stage: leadStageSchema.optional() }).optional())
+      .query(async ({ input }) => listLeads(input)),
+    metrics: adminProcedure.query(async () => {
+      const records = await listLeads();
+      return {
+        total: records.length,
+        new: records.filter(record => record.stage === "new").length,
+        diagnostic: records.filter(record => record.stage === "diagnostic").length,
+        proposal: records.filter(record => record.stage === "proposal").length,
+        won: records.filter(record => record.stage === "won").length,
+      };
+    }),
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          stage: leadStageSchema.optional(),
+          priority: leadPrioritySchema.optional(),
+          notes: z.string().max(10000).nullable().optional(),
+          nextStep: z.string().max(1000).nullable().optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...changes } = input;
+        await updateLead(id, changes);
+        return { success: true } as const;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

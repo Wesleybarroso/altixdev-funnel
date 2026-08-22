@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,35 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const leadStages = ["new", "diagnostic", "proposal", "won", "lost"] as const;
+export const leadPriorities = ["low", "medium", "high"] as const;
+
+/**
+ * Contacts collected through the public conversion flow. Diagnostic answers are
+ * retained with the lead so the sales conversation starts with full context.
+ */
+export const leads = mysqlTable("leads", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 48 }).notNull(),
+  company: varchar("company", { length: 160 }),
+  source: varchar("source", { length: 64 }).notNull().default("website"),
+  objective: varchar("objective", { length: 120 }).notNull(),
+  currentChannel: varchar("currentChannel", { length: 120 }).notNull(),
+  bottleneck: varchar("bottleneck", { length: 160 }).notNull(),
+  urgency: varchar("urgency", { length: 64 }).notNull(),
+  diagnosticSummary: text("diagnosticSummary").notNull(),
+  consent: boolean("consent").notNull().default(false),
+  consentAt: timestamp("consentAt"),
+  whatsappRedirectedAt: timestamp("whatsappRedirectedAt"),
+  stage: mysqlEnum("stage", leadStages).notNull().default("new"),
+  priority: mysqlEnum("priority", leadPriorities).notNull().default("medium"),
+  notes: text("notes"),
+  nextStep: text("nextStep"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;

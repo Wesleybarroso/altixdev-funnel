@@ -1,33 +1,78 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { ArrowRight, Bot, CheckCircle2, CircleDotDashed, Code2, MessageCircle, MoveRight, ShieldCheck, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+type FormState = {
+  objective: string;
+  currentChannel: string;
+  bottleneck: string;
+  urgency: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  consent: boolean;
+};
+
+const questionSteps = [
+  { key: "objective", eyebrow: "01 · Resultado desejado", title: "O que você quer tornar mais eficiente agora?", options: ["Gerar mais oportunidades", "Converter mais contatos", "Reduzir tarefas manuais", "Organizar uma operação digital"] },
+  { key: "currentChannel", eyebrow: "02 · Canal atual", title: "Onde suas conversas e oportunidades começam hoje?", options: ["Instagram", "WhatsApp", "Indicação", "Site", "E-mail", "Outro"] },
+  { key: "bottleneck", eyebrow: "03 · Principal gargalo", title: "Qual ponto mais trava seu avanço?", options: ["Site não explica bem a solução", "Leads não recebem resposta a tempo", "Atendimento é muito repetitivo", "Falta de processo comercial"] },
+  { key: "urgency", eyebrow: "04 · Momento da decisão", title: "Qual é a urgência para resolver isso?", options: ["Quero começar nas próximas semanas", "Estou comparando soluções", "Quero estruturar o plano primeiro", "Ainda estou entendendo o problema"] },
+] as const;
+
+const initialForm: FormState = { objective: "", currentChannel: "", bottleneck: "", urgency: "", name: "", email: "", phone: "", company: "", consent: false };
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<FormState>(initialForm);
+  const createLead = trpc.leads.create.useMutation({
+    onSuccess: ({ diagnosticSummary }) => {
+      const message = `Olá, Wesley! Concluí o diagnóstico da Altixdev e gostaria de conversar. ${diagnosticSummary}`;
+      window.location.assign(`https://wa.me/5591992261383?text=${encodeURIComponent(message)}`);
+    },
+    onError: () => toast.error("Não conseguimos registrar seu diagnóstico. Revise os dados e tente novamente."),
+  });
+  const isContactStep = step === questionSteps.length;
+  const selected = isContactStep ? "" : form[questionSteps[step].key];
+  const progress = Math.round(((step + 1) / (questionSteps.length + 1)) * 100);
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  const chooseOption = (value: string) => {
+    const key = questionSteps[step].key;
+    setForm(current => ({ ...current, [key]: value }));
+  };
+
+  const next = () => {
+    if (!selected) return toast.error("Escolha uma opção para continuar.");
+    setStep(current => current + 1);
+  };
+
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!form.consent) return toast.error("Confirme o consentimento para enviar o diagnóstico.");
+    createLead.mutate({ ...form, company: form.company || undefined, consent: true });
+  };
+
+  const scrollToDiagnostic = () => document.getElementById("diagnostico")?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
+    <main className="min-h-screen overflow-x-hidden bg-[#F7F8FC] text-[#08152D]">
+      <section className="relative isolate overflow-hidden bg-[#071326] text-white">
+        <div className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(circle_at_20%_20%,rgba(37,99,235,.38),transparent_30%),radial-gradient(circle_at_75%_40%,rgba(124,58,237,.24),transparent_28%)]" />
+        <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-6 lg:px-8"><a href="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-white font-serif text-xl text-[#0B1730]">A</span><span className="font-semibold tracking-tight">altixdev</span></a><div className="hidden gap-7 text-sm text-slate-300 md:flex"><a href="#solucoes" className="hover:text-white">Soluções</a><a href="#processo" className="hover:text-white">Como funciona</a><a href="#diagnostico" className="hover:text-white">Diagnóstico</a></div><button onClick={scrollToDiagnostic} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0B1730] transition hover:-translate-y-0.5">Começar diagnóstico</button></nav>
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-12 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-28 lg:pt-20"><div className="max-w-3xl"><div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#AFCBFF]"><Sparkles size={14} /> Sites, automações e IA aplicados ao comercial</div><h1 className="mt-7 font-serif text-5xl leading-[.98] tracking-[-.05em] sm:text-6xl lg:text-7xl">Seu digital pode gerar conversas melhores.</h1><p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">A Altixdev constrói sites de alto impacto e fluxos de WhatsApp com IA para transformar atenção em oportunidades acompanhadas com contexto.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><button onClick={scrollToDiagnostic} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2F6BFF] px-5 py-3.5 text-sm font-semibold shadow-[0_18px_60px_rgba(47,107,255,.35)] transition hover:-translate-y-0.5">Diagnosticar meu funil <ArrowRight size={17} /></button><a href="#solucoes" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3.5 text-sm font-semibold text-white hover:bg-white/5">Conhecer soluções <MoveRight size={17} /></a></div><p className="mt-5 text-xs leading-5 text-slate-400">Diagnóstico breve, sem compromisso. Você escolhe se quer continuar a conversa.</p></div><div className="relative mx-auto flex w-full max-w-lg items-center justify-center"><div className="absolute h-[22rem] w-[22rem] rounded-full border border-white/10" /><div className="absolute h-[16rem] w-[16rem] rounded-full border border-dashed border-white/15" /><div className="relative w-full rounded-3xl border border-white/10 bg-white/[.07] p-7 shadow-[0_30px_90px_rgba(0,0,0,.32)] backdrop-blur"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#AFCBFF]">Fluxo Altixdev</p><div className="mt-6 space-y-3">{["Atrair a pessoa certa", "Entender o contexto", "Qualificar sem pressão", "Encaminhar com diagnóstico"].map((item, index) => <div key={item} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0A1A35]/80 px-4 py-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#2F6BFF] text-xs font-bold">0{index + 1}</span><span className="text-sm font-medium">{item}</span><ArrowRight className="ml-auto text-[#8AB6FF]" size={16} /></div>)}</div><div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5 text-sm text-slate-300"><CircleDotDashed className="text-[#AFCBFF]" size={18} /> Cada conversa chega com mais contexto.</div></div></div></div>
+      </section>
+
+      <section id="solucoes" className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-28"><div className="max-w-2xl"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2563EB]">Soluções que se conectam</p><h2 className="mt-4 font-serif text-4xl tracking-[-.04em] sm:text-5xl">Mais clareza na mensagem. Menos fricção no caminho até a venda.</h2></div><div className="mt-12 grid gap-4 md:grid-cols-3">{[{ icon: Code2, title: "Sites que posicionam", text: "Páginas que explicam sua solução, geram confiança e orientam o próximo passo." }, { icon: MessageCircle, title: "WhatsApp que organiza", text: "Fluxos de atendimento para responder, qualificar e transferir o contexto ao seu time." }, { icon: Bot, title: "IA com limites claros", text: "Automação com assuntos aprovados, rota humana e melhoria contínua conforme a operação." }].map(item => <article key={item.title} className="group rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_18px_40px_rgba(15,23,42,.05)] transition hover:-translate-y-1 hover:border-[#B8CCFF]"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#EEF3FF] text-[#2563EB]"><item.icon size={23} /></span><h3 className="mt-8 font-serif text-2xl">{item.title}</h3><p className="mt-3 leading-7 text-slate-600">{item.text}</p><div className="mt-7 h-px w-10 bg-[#2563EB] transition-all group-hover:w-16" /></article>)}</div></section>
+
+      <section id="processo" className="border-y border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-[.85fr_1.15fr] lg:px-8 lg:py-28"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2563EB]">Como funciona</p><h2 className="mt-4 font-serif text-4xl tracking-[-.04em]">Wesley transforma tecnologia em uma jornada comercial mais simples.</h2><p className="mt-6 max-w-md leading-7 text-slate-600">Você não precisa começar com um projeto gigante. A Altixdev começa entendendo o objetivo, o gargalo e a menor mudança capaz de gerar aprendizado.</p></div><div className="grid gap-4 sm:grid-cols-2">{[{ n: "01", title: "Descobrir", text: "Mapeamos objetivo, canal, gargalo e urgência." }, { n: "02", title: "Desenhar", text: "Conectamos mensagem, site, WhatsApp e pessoas." }, { n: "03", title: "Implantar", text: "Construímos com escopo, limites e responsáveis." }, { n: "04", title: "Evoluir", text: "Medimos, ajustamos e ampliamos o que faz sentido." }].map(item => <div key={item.n} className="border-t border-slate-200 pt-5"><span className="text-sm font-bold text-[#2563EB]">{item.n}</span><h3 className="mt-3 font-serif text-2xl">{item.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p></div>)}</div></div></section>
+
+      <section id="diagnostico" className="bg-[#EAF0FF] px-5 py-20 lg:py-28"><div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[.8fr_1.2fr] lg:px-8"><div className="lg:pt-8"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#2563EB]">Diagnóstico guiado</p><h2 className="mt-4 font-serif text-4xl tracking-[-.04em] sm:text-5xl">Descubra qual próximo passo faz sentido para o seu negócio.</h2><p className="mt-6 max-w-md leading-7 text-slate-600">Em poucos passos, você organiza o contexto. Ao final, Wesley recebe um resumo e o WhatsApp abre com a conversa já preparada.</p><div className="mt-8 flex items-start gap-3 text-sm leading-6 text-slate-600"><ShieldCheck className="mt-0.5 shrink-0 text-[#2563EB]" size={19} /> Seus dados são usados para responder ao seu pedido, preparar o diagnóstico e dar continuidade caso você autorize.</div></div>
+        <section className="rounded-[2rem] bg-white p-6 shadow-[0_25px_70px_rgba(37,99,235,.14)] sm:p-9"><div className="flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#2563EB]">{isContactStep ? "05 · Seus dados" : questionSteps[step].eyebrow}</p><span className="text-xs font-semibold text-slate-400">{progress}% concluído</span></div><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#2F6BFF] transition-all duration-300" style={{ width: `${progress}%` }} /></div>{!isContactStep ? <><h3 className="mt-8 font-serif text-3xl tracking-[-.03em]">{questionSteps[step].title}</h3><div className="mt-7 grid gap-3">{questionSteps[step].options.map(option => <button key={option} type="button" onClick={() => chooseOption(option)} className={`flex items-center justify-between rounded-2xl border px-5 py-4 text-left text-sm font-semibold transition ${selected === option ? "border-[#2563EB] bg-[#EEF3FF] text-[#1746BA]" : "border-slate-200 text-slate-700 hover:border-[#9DB9FF]"}`}><span>{option}</span><span className={`grid h-5 w-5 place-items-center rounded-full border ${selected === option ? "border-[#2563EB] bg-[#2563EB] text-white" : "border-slate-300"}`}>{selected === option ? <CheckCircle2 size={13} /> : null}</span></button>)}</div><div className="mt-8 flex justify-between gap-3"><button type="button" disabled={step === 0} onClick={() => setStep(current => current - 1)} className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 disabled:opacity-40">Voltar</button><button type="button" onClick={next} className="inline-flex items-center gap-2 rounded-xl bg-[#0B1730] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5">Continuar <ArrowRight size={16} /></button></div></> : <form onSubmit={submit}><h3 className="mt-8 font-serif text-3xl tracking-[-.03em]">Para onde enviamos seu diagnóstico?</h3><p className="mt-3 text-sm leading-6 text-slate-600">Preencha seus dados e continue no WhatsApp com o resumo já pronto.</p><div className="mt-7 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Nome<input required value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#2563EB]" placeholder="Como podemos chamar você?" /></label><label className="text-sm font-semibold text-slate-700">Empresa<input value={form.company} onChange={event => setForm(current => ({ ...current, company: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#2563EB]" placeholder="Nome da empresa" /></label><label className="text-sm font-semibold text-slate-700">E-mail<input required type="email" value={form.email} onChange={event => setForm(current => ({ ...current, email: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#2563EB]" placeholder="voce@empresa.com" /></label><label className="text-sm font-semibold text-slate-700">WhatsApp<input required value={form.phone} onChange={event => setForm(current => ({ ...current, phone: event.target.value }))} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-normal outline-none focus:border-[#2563EB]" placeholder="(00) 00000-0000" /></label></div><label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600"><input type="checkbox" checked={form.consent} onChange={event => setForm(current => ({ ...current, consent: event.target.checked }))} className="mt-0.5 h-4 w-4 accent-[#2563EB]" /><span>Autorizo a Altixdev a usar meus dados para responder ao meu pedido, enviar o resumo deste diagnóstico e fazer contato sobre esta oportunidade. Posso solicitar a interrupção do contato a qualquer momento.</span></label><div className="mt-7 flex justify-between gap-3"><button type="button" onClick={() => setStep(current => current - 1)} className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-500">Voltar</button><button disabled={createLead.isPending} className="inline-flex items-center gap-2 rounded-xl bg-[#2F6BFF] px-5 py-3 text-sm font-semibold text-white shadow-[0_15px_35px_rgba(47,107,255,.25)] disabled:opacity-60">{createLead.isPending ? "Salvando…" : "Enviar e falar no WhatsApp"} <MessageCircle size={17} /></button></div></form>}</section>
+      </div></section>
+
+      <footer className="bg-[#071326] px-5 py-10 text-slate-300"><div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm sm:flex-row sm:items-center sm:justify-between lg:px-8"><div><strong className="text-white">altixdev</strong><span className="ml-3 text-slate-500">Tecnologia que prepara conversas melhores.</span></div><div className="flex gap-5"><a href="mailto:contato@altixdev.com" className="hover:text-white">contato@altixdev.com</a><a href="/painel" className="text-slate-500 hover:text-white">Acesso privado</a></div></div></footer>
+    </main>
   );
 }

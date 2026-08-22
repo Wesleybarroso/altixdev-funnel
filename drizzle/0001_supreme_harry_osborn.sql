@@ -1,0 +1,23 @@
+CREATE TABLE `leads` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(120) NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`phone` varchar(48) NOT NULL,
+	`company` varchar(160),
+	`source` varchar(64) NOT NULL DEFAULT 'website',
+	`objective` varchar(120) NOT NULL,
+	`currentChannel` varchar(120) NOT NULL,
+	`bottleneck` varchar(160) NOT NULL,
+	`urgency` varchar(64) NOT NULL,
+	`diagnosticSummary` text NOT NULL,
+	`consent` boolean NOT NULL DEFAULT false,
+	`consentAt` timestamp,
+	`whatsappRedirectedAt` timestamp,
+	`stage` enum('new','diagnostic','proposal','won','lost') NOT NULL DEFAULT 'new',
+	`priority` enum('low','medium','high') NOT NULL DEFAULT 'medium',
+	`notes` text,
+	`nextStep` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `leads_id` PRIMARY KEY(`id`)
+);
