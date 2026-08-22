@@ -407,25 +407,30 @@ export const appRouter = router({
   chanify: router({
     get: adminProcedure.query(async () => {
       const record = await getIntegrationConfigByProvider("chanify");
-      if (!record) return { configured: false, enabled: false, hasToken: false, lastCheckAt: null, lastStatus: null, lastMessage: null };
+      if (!record) return { configured: false, enabled: false, hasToken: false, serverUrl: "https://api.chanify.net", lastCheckAt: null, lastStatus: null, lastMessage: null };
       try {
-        const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as { token?: string };
-        return { configured: true, enabled: record.enabled, hasToken: Boolean(config.token), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
+        const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as { token?: string; serverUrl?: string };
+        return { configured: true, enabled: record.enabled, hasToken: Boolean(config.token), serverUrl: config.serverUrl || "https://api.chanify.net", lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
       } catch {
-        return { configured: true, enabled: false, hasToken: false, lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: "Configuração indisponível. Edite e salve novamente." };
+        return { configured: true, enabled: false, hasToken: false, serverUrl: "https://api.chanify.net", lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: "Configuração indisponível. Edite e salve novamente." };
       }
     }),
     save: adminProcedure
-      .input(z.object({ token: z.string().max(512).optional(), removeToken: z.boolean().default(false), enabled: z.boolean() }))
+      .input(z.object({ serverUrl: z.string().url().max(512).optional(), token: z.string().max(512).optional(), removeToken: z.boolean().default(false), enabled: z.boolean() }))
       .mutation(async ({ input }) => {
         const current = await getIntegrationConfigByProvider("chanify");
         let existingToken = "";
+        let existingServerUrl = "https://api.chanify.net";
         if (current) {
-          try { existingToken = (JSON.parse(decryptWebhookValue(current.configCiphertext)) as { token?: string }).token ?? ""; } catch { existingToken = ""; }
+          try {
+            const existing = JSON.parse(decryptWebhookValue(current.configCiphertext)) as { token?: string; serverUrl?: string };
+            existingToken = existing.token ?? "";
+            existingServerUrl = existing.serverUrl ?? existingServerUrl;
+          } catch { existingToken = ""; }
         }
         let config;
         try {
-          config = validateChanifyConfig({ token: input.removeToken ? "" : input.token?.trim() || existingToken });
+          config = validateChanifyConfig({ token: input.removeToken ? "" : input.token?.trim() || existingToken, serverUrl: input.serverUrl?.trim() || existingServerUrl });
         } catch (error) {
           throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Configuração Chanify inválida." });
         }

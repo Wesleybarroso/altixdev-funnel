@@ -78,3 +78,9 @@
 - [x] Exibir no cartão Chanify um indicador explícito de saúde com sucesso, erro ou sem teste.
 - [ ] Validar visualmente o cartão Chanify no painel depois de adicionar o indicador de saúde.
 - [ ] Validar o Chanify no iPhone e definir se o ntfy permanecerá ativo ou será desativado.
+- [ ] Orientar a obtenção do token Chanify, o salvamento seguro no painel e o teste de entrega no iPhone.
+- [ ] Configurar e testar um webhook n8n protegido no painel para acionar o fluxo escolhido pelo proprietário.
+- [ ] Avaliar a alternativa de servidor Chanify próprio, incluindo hospedagem, HTTPS, manutenção e custo estimado.
+- [x] Preparar implantação persistente do Chanify no EasyPanel com domínio, HTTPS e armazenamento de dados.
+- [x] Permitir configurar no painel Altixdev o endpoint HTTPS de um servidor Chanify próprio sem expor o token.
+- [ ] Implantar o Chanify no EasyPanel, conectar o domínio HTTPS e validar o endpoint próprio com o token do canal.
