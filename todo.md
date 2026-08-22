@@ -19,3 +19,9 @@
 - [x] Adicionar elementos de confiança legítimos, redução de objeções e um caminho mais claro até a conversa.
 - [x] Refinar o diagnóstico guiado com microcopy de conversão e reforço de valor antes da captura.
 - [x] Validar visualmente a versão refinada em desktop e mobile, testar e salvar novo checkpoint.
+- [x] Definir credenciais administrativas seguras por variáveis protegidas, sem senha em texto aberto no código.
+- [x] Criar a tela de login por e-mail e senha para o painel de oportunidades.
+- [x] Implementar sessão segura, encerramento de sessão e bloqueio do painel para acessos não autenticados.
+- [x] Testar o login administrativo, a recusa de credenciais inválidas e a proteção do painel.
+- [x] Validar visualmente o novo acesso por e-mail e senha.
+- [ ] Salvar o checkpoint atualizado do login privado por e-mail e senha.

@@ -1,5 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { ADMIN_SESSION_COOKIE, createAdminSession, getAdminSessionDuration, getConfiguredAdminEmail, verifyAdminCredentials } from "./adminAuth";
 import { createLead, listLeads, updateLead } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -25,6 +27,28 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    adminStatus: publicProcedure.query(({ ctx }) => ({
+      authenticated: Boolean(ctx.passwordAdmin),
+      email: ctx.passwordAdmin ? getConfiguredAdminEmail() : null,
+    })),
+    adminLogin: publicProcedure
+      .input(z.object({ email: z.string().email().max(320), password: z.string().min(1).max(256) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!verifyAdminCredentials(input.email, input.password)) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha inválidos." });
+        }
+
+        const token = await createAdminSession();
+        ctx.res.cookie(ADMIN_SESSION_COOKIE, token, {
+          ...getSessionCookieOptions(ctx.req),
+          maxAge: getAdminSessionDuration(),
+        });
+        return { success: true, email: getConfiguredAdminEmail() } as const;
+      }),
+    adminLogout: publicProcedure.mutation(({ ctx }) => {
+      ctx.res.clearCookie(ADMIN_SESSION_COOKIE, getSessionCookieOptions(ctx.req));
+      return { success: true } as const;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

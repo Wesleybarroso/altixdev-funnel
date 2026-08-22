@@ -11,7 +11,7 @@ vi.mock("./db", () => databaseMocks);
 
 import { appRouter } from "./routers";
 
-function createContext(role: "admin" | "user"): TrpcContext {
+function createContext(role: "admin" | "user", passwordAdmin = false): TrpcContext {
   return {
     user: {
       id: 1,
@@ -26,6 +26,7 @@ function createContext(role: "admin" | "user"): TrpcContext {
     },
     req: {} as TrpcContext["req"],
     res: {} as TrpcContext["res"],
+    passwordAdmin,
   };
 }
 
@@ -86,7 +87,7 @@ describe("leads router", () => {
 
   it("permite ao administrador atualizar estágio, prioridade e próximo passo", async () => {
     databaseMocks.updateLead.mockResolvedValue(undefined);
-    const caller = appRouter.createCaller(createContext("admin"));
+    const caller = appRouter.createCaller(createContext("admin", true));
 
     await expect(
       caller.leads.update({ id: 7, stage: "proposal", priority: "high", nextStep: "Enviar proposta revisada" }),

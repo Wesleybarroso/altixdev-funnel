@@ -1,7 +1,5 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Check, ChevronDown, LayoutDashboard, LogOut, Search, ShieldCheck, Users } from "lucide-react";
+import { Check, LayoutDashboard, LockKeyhole, LogOut, Mail, Search, ShieldCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,13 +14,31 @@ const stageLabel = {
 const priorityLabel = { low: "Baixa", medium: "Média", high: "Alta" } as const;
 
 export default function LeadDashboard() {
-  const { user, loading, logout } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<"" | keyof typeof stageLabel>("");
   const queryInput = useMemo(() => ({ search: search || undefined, stage: stage || undefined }), [search, stage]);
-  const leadsQuery = trpc.leads.list.useQuery(queryInput, { enabled: user?.role === "admin" });
-  const metricsQuery = trpc.leads.metrics.useQuery(undefined, { enabled: user?.role === "admin" });
   const utils = trpc.useUtils();
+  const adminStatus = trpc.auth.adminStatus.useQuery();
+  const hasAccess = adminStatus.data?.authenticated === true;
+  const leadsQuery = trpc.leads.list.useQuery(queryInput, { enabled: hasAccess });
+  const metricsQuery = trpc.leads.metrics.useQuery(undefined, { enabled: hasAccess });
+  const adminLogin = trpc.auth.adminLogin.useMutation({
+    onSuccess: () => {
+      setPassword("");
+      utils.auth.adminStatus.invalidate();
+      toast.success("Acesso liberado.");
+    },
+    onError: () => toast.error("E-mail ou senha inválidos."),
+  });
+  const adminLogout = trpc.auth.adminLogout.useMutation({
+    onSuccess: () => {
+      utils.auth.adminStatus.invalidate();
+      utils.leads.list.invalidate();
+      toast.success("Sessão encerrada.");
+    },
+  });
   const updateMutation = trpc.leads.update.useMutation({
     onSuccess: () => {
       utils.leads.list.invalidate();
@@ -32,26 +48,23 @@ export default function LeadDashboard() {
     onError: () => toast.error("Não foi possível atualizar o lead."),
   });
 
-  if (loading) return <div className="min-h-screen bg-[#071326] text-white grid place-items-center font-medium">Carregando painel…</div>;
+  if (adminStatus.isLoading) return <div className="min-h-screen bg-[#071326] text-white grid place-items-center font-medium">Verificando acesso…</div>;
 
-  if (!user) {
+  if (!hasAccess) {
     return (
       <main className="min-h-screen bg-[#071326] text-white grid place-items-center px-6">
-        <section className="max-w-md text-center">
+        <section className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[.05] p-7 text-center shadow-[0_24px_80px_rgba(0,0,0,.3)] backdrop-blur sm:p-9">
           <div className="mx-auto mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-[#1D4ED8] shadow-[0_18px_60px_rgba(29,78,216,.35)]"><ShieldCheck size={28} /></div>
           <p className="text-xs uppercase tracking-[.2em] text-[#8AB6FF]">Altixdev · acesso seguro</p>
           <h1 className="mt-4 font-serif text-4xl tracking-tight">Seu painel comercial é privado.</h1>
-          <p className="mt-4 text-base leading-7 text-slate-300">Entre com a conta autorizada para acompanhar diagnósticos, propostas e oportunidades em andamento.</p>
-          <button onClick={() => startLogin()} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#071326] transition hover:-translate-y-0.5">Entrar no painel <ChevronDown size={16} className="-rotate-90" /></button>
+          <p className="mt-4 text-base leading-7 text-slate-300">Use seu e-mail e senha administrativos para acompanhar diagnósticos, propostas e oportunidades em andamento.</p>
+          <form onSubmit={event => { event.preventDefault(); adminLogin.mutate({ email, password }); }} className="mt-7 space-y-4 text-left">
+            <label className="block text-xs font-bold uppercase tracking-[.14em] text-slate-300">E-mail<div className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-[#061126] px-3"><Mail size={16} className="text-[#8AB6FF]" /><input required type="email" value={email} onChange={event => setEmail(event.target.value)} className="w-full bg-transparent py-3 text-sm text-white outline-none" placeholder="voce@altixdev.com.br" /></div></label>
+            <label className="block text-xs font-bold uppercase tracking-[.14em] text-slate-300">Senha<div className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-[#061126] px-3"><LockKeyhole size={16} className="text-[#8AB6FF]" /><input required type="password" value={password} onChange={event => setPassword(event.target.value)} className="w-full bg-transparent py-3 text-sm text-white outline-none" placeholder="Sua senha" /></div></label>
+            <button disabled={adminLogin.isPending} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-semibold text-[#071326] transition hover:-translate-y-0.5 disabled:opacity-60">{adminLogin.isPending ? "Entrando…" : "Acessar painel"} <ShieldCheck size={17} /></button>
+          </form>
+          <p className="mt-5 text-xs leading-5 text-slate-400">A sessão é privada e pode ser encerrada a qualquer momento.</p>
         </section>
-      </main>
-    );
-  }
-
-  if (user.role !== "admin") {
-    return (
-      <main className="min-h-screen bg-[#071326] text-white grid place-items-center px-6">
-        <section className="max-w-md text-center"><ShieldCheck className="mx-auto text-[#8AB6FF]" size={40} /><h1 className="mt-5 font-serif text-4xl">Acesso restrito</h1><p className="mt-4 text-slate-300">Esta área é reservada ao proprietário autorizado da Altixdev.</p><a href="/" className="mt-8 inline-flex rounded-xl border border-white/15 px-5 py-3 text-sm font-semibold">Voltar ao site</a></section>
       </main>
     );
   }
@@ -71,7 +84,7 @@ export default function LeadDashboard() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 lg:px-10">
           <a href="/" className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0B1730] font-serif text-xl text-white">A</span><span><strong className="text-sm tracking-tight">altixdev</strong><small className="ml-2 text-[10px] uppercase tracking-[.16em] text-slate-400">Pipeline</small></span></a>
-          <div className="flex items-center gap-3"><span className="hidden text-sm text-slate-500 sm:inline">{user.name || "Wesley"}</span><button onClick={logout} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"><LogOut size={15} /> Sair</button></div>
+          <div className="flex items-center gap-3"><span className="hidden text-sm text-slate-500 sm:inline">{adminStatus.data?.email || "Administrador"}</span><button onClick={() => adminLogout.mutate()} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"><LogOut size={15} /> Sair</button></div>
         </div>
       </header>
 
