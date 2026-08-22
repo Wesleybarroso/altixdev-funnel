@@ -1,17 +1,17 @@
 # Chanify próprio no EasyPanel
 
-Este guia hospeda o **servidor Chanify** separadamente do site Altixdev. O site continua hospedado normalmente; apenas as notificações passam pelo novo endpoint `https://chanify.seudominio.com`.
+Este guia hospeda o **servidor Chanify** separadamente do site Altixdev. O site continua hospedado normalmente; apenas as notificações passam pelo novo endpoint `https://alertas.altixdev.com.br`.
 
 > O Chanify é distribuído sob licença MIT e suporta execução com Docker. O EasyPanel pode executar uma imagem Docker, manter um volume persistente e publicar um domínio HTTPS para o serviço. [1] [2]
 
 ## 1. Preparar o endereço público
 
-Escolha um subdomínio dedicado, como `chanify.seudominio.com`. No provedor de DNS do domínio, crie um registro **A** apontando esse subdomínio para o IP do servidor onde o EasyPanel está instalado.
+O subdomínio definido é `alertas.altixdev.com.br`. No provedor de DNS do domínio, crie um registro **A** apontando esse subdomínio para o IP do servidor onde o EasyPanel está instalado.
 
 | Campo DNS | Valor de exemplo |
 |---|---|
 | Tipo | `A` |
-| Nome | `chanify` |
+| Nome | `alertas` |
 | Destino | IP público do servidor EasyPanel |
 | TTL | Automático ou `3600` |
 
@@ -42,14 +42,14 @@ volumes:
 Na área **Environment**, cadastre:
 
 ```dotenv
-CHANIFY_ENDPOINT=https://chanify.seudominio.com
+CHANIFY_ENDPOINT=https://alertas.altixdev.com.br
 ```
 
-Substitua `chanify.seudominio.com` pelo domínio que você realmente criou. Em seguida, toque em **Deploy**.
+Em seguida, toque em **Deploy**.
 
 ## 3. Conectar domínio e HTTPS
 
-Depois do deploy, abra **Domains** no serviço Compose e adicione `chanify.seudominio.com`. Direcione esse domínio ao serviço interno `chanify` na porta `8080` e habilite HTTPS/certificado no próprio EasyPanel.
+Depois do deploy, abra **Domains** no serviço Compose e adicione `alertas.altixdev.com.br`. Direcione esse domínio ao serviço interno `chanify` na porta `8080` e habilite HTTPS/certificado no próprio EasyPanel.
 
 O EasyPanel recomenda usar seus domínios para tráfego HTTP e HTTPS, em vez de expor portas diretamente. [2]
 
@@ -58,7 +58,7 @@ O EasyPanel recomenda usar seus domínios para tráfego HTTP e HTTPS, em vez de 
 Abra no navegador do computador ou celular:
 
 ```text
-https://chanify.seudominio.com/
+https://alertas.altixdev.com.br/
 ```
 
 O endereço do nó pode ser lido pelo aplicativo Chanify via QR Code. No iPhone, abra **Nodes → +** e escaneie o QR Code mostrado pelo seu próprio servidor. Depois crie um canal `Altixdev`, abra os detalhes do canal e copie o token.
@@ -69,7 +69,7 @@ No Altixdev, entre em **Painel → Integrações → Notificações Chanify** e 
 
 | Campo | Valor |
 |---|---|
-| Servidor Chanify | `https://chanify.seudominio.com` |
+| Servidor Chanify | `https://alertas.altixdev.com.br` |
 | Token Chanify | Token copiado no canal Altixdev |
 | Alertas automáticos | Ativado |
 

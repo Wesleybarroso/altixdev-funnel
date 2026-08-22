@@ -84,3 +84,7 @@
 - [x] Preparar implantação persistente do Chanify no EasyPanel com domínio, HTTPS e armazenamento de dados.
 - [x] Permitir configurar no painel Altixdev o endpoint HTTPS de um servidor Chanify próprio sem expor o token.
 - [ ] Implantar o Chanify no EasyPanel, conectar o domínio HTTPS e validar o endpoint próprio com o token do canal.
+- [ ] Configurar a implantação Chanify para o domínio definido `alertas.altixdev.com.br` e orientar o DNS correspondente.
+- [ ] Corrigir a inicialização do Chanify no EasyPanel com modo persistente e volume de dados, sem exigir segredo de modo sem estado.
+- [ ] Resolver o timeout de acesso ao Docker Hub no servidor EasyPanel antes de baixar a imagem Chanify.
+- [x] Preparar fallback de implantação Chanify via release oficial após os timeouts persistentes do Docker Hub.
