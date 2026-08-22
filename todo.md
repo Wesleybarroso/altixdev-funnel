@@ -107,7 +107,7 @@
 - [x] Enviar separadamente ao usuário o PDF do Modelo 5 de demonstração, qualificação e piloto.
 - [x] Identificar e corrigir o endereço de e-mail exibido no rodapé da landing page.
 - [x] Implementar seletor acessível com traduções da landing page para inglês, espanhol, português de Portugal, alemão, neerlandês, russo, norueguês e irlandês.
-- [ ] Testar a troca de idiomas em desktop e mobile, atualizar testes e publicar a mudança no repositório GitHub privado.
+- [x] Testar a troca de idiomas em desktop e mobile, atualizar testes e publicar a mudança no repositório GitHub privado.
 - [x] Internacionalizar os textos remanescentes da interface pública e revalidar a landing em idioma não português.
 - [x] Localizar placeholders e textos públicos ainda codificados diretamente na landing e movê-los para o catálogo de idiomas.
 - [x] Validar objetivamente os textos visíveis da landing em um idioma não português.
