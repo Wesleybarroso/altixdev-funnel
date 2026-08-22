@@ -99,5 +99,5 @@
 - [ ] Corrigir a inicialização do contêiner Chanify no EasyPanel após o estado persistente de espera do serviço.
 - [x] Criar um repositório GitHub privado com todos os arquivos atuais do projeto Altixdev e confirmar o envio remoto.
 - [x] Criar README.md completo com instalação, configuração, uso, integrações, segurança e manutenção do projeto.
-- [ ] Publicar o README atualizado no repositório GitHub privado `Wesleybarroso/altixdev-funnel`.
+- [x] Publicar o README atualizado no repositório GitHub privado `Wesleybarroso/altixdev-funnel`.
 - [x] Incorporar o comando persistente do Chanify no Dockerfile do repositório para eliminar dependência da substituição de comando do EasyPanel.
