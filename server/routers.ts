@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { ADMIN_SESSION_COOKIE, createAdminSession, getAdminSessionDuration, getConfiguredAdminEmail, verifyAdminCredentials } from "./adminAuth";
 import { createLead, listLeads, updateLead } from "./db";
-import { getSessionCookieOptions } from "./_core/cookies";
+import { getAdminSessionCookieOptions, getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 
@@ -40,13 +40,13 @@ export const appRouter = router({
 
         const token = await createAdminSession();
         ctx.res.cookie(ADMIN_SESSION_COOKIE, token, {
-          ...getSessionCookieOptions(ctx.req),
+          ...getAdminSessionCookieOptions(ctx.req),
           maxAge: getAdminSessionDuration(),
         });
-        return { success: true, email: getConfiguredAdminEmail() } as const;
+        return { success: true, email: getConfiguredAdminEmail(), sessionToken: token } as const;
       }),
     adminLogout: publicProcedure.mutation(({ ctx }) => {
-      ctx.res.clearCookie(ADMIN_SESSION_COOKIE, getSessionCookieOptions(ctx.req));
+      ctx.res.clearCookie(ADMIN_SESSION_COOKIE, getAdminSessionCookieOptions(ctx.req));
       return { success: true } as const;
     }),
     logout: publicProcedure.mutation(({ ctx }) => {

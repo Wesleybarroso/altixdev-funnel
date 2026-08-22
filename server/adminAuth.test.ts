@@ -27,9 +27,12 @@ describe("login administrativo por credenciais", () => {
     expect(cookies).toHaveLength(1);
     expect(cookies[0]?.name).toBe(ADMIN_SESSION_COOKIE);
     expect(cookies[0]?.value).toContain(".");
-    expect(cookies[0]?.options).toMatchObject({ httpOnly: true, path: "/" });
+    expect(cookies[0]?.options).toMatchObject({ httpOnly: true, path: "/", sameSite: "none", secure: true, partitioned: true });
     await expect(
       hasAdminSession({ headers: { cookie: `${ADMIN_SESSION_COOKIE}=${cookies[0]?.value}` } } as never),
+    ).resolves.toBe(true);
+    await expect(
+      hasAdminSession({ headers: { "x-altixdev-admin-session": cookies[0]?.value } } as never),
     ).resolves.toBe(true);
   });
 

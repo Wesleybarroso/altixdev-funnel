@@ -42,12 +42,15 @@ export async function createAdminSession() {
 }
 
 export async function hasAdminSession(req: Request) {
+  const headerValue = req.headers["x-altixdev-admin-session"];
+  const headerToken = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   const cookieHeader = req.headers.cookie ?? "";
-  const token = cookieHeader
+  const cookieToken = cookieHeader
     .split(";")
     .map(part => part.trim())
     .find(part => part.startsWith(`${ADMIN_SESSION_COOKIE}=`))
     ?.slice(ADMIN_SESSION_COOKIE.length + 1);
+  const token = headerToken || cookieToken;
 
   if (!token) return false;
   try {

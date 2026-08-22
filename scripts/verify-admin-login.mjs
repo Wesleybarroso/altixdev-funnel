@@ -28,7 +28,9 @@ if (!sessionCookie) {
 const cookiePair = sessionCookie.split(";")[0];
 const input = encodeURIComponent(JSON.stringify({ 0: { json: null } }));
 const statusResponse = await fetch(`${baseUrl}/api/trpc/auth.adminStatus?batch=1&input=${input}`, {
-  headers: { cookie: cookiePair },
+  headers: {
+    "x-altixdev-admin-session": cookiePair.slice("altixdev_admin_session=".length),
+  },
 });
 
 if (!statusResponse.ok) {

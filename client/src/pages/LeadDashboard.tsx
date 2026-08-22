@@ -20,20 +20,28 @@ export default function LeadDashboard() {
   const [stage, setStage] = useState<"" | keyof typeof stageLabel>("");
   const queryInput = useMemo(() => ({ search: search || undefined, stage: stage || undefined }), [search, stage]);
   const utils = trpc.useUtils();
-  const adminStatus = trpc.auth.adminStatus.useQuery();
+  const adminStatus = trpc.auth.adminStatus.useQuery(undefined, { retry: false, refetchOnWindowFocus: false });
   const hasAccess = adminStatus.data?.authenticated === true;
   const leadsQuery = trpc.leads.list.useQuery(queryInput, { enabled: hasAccess });
   const metricsQuery = trpc.leads.metrics.useQuery(undefined, { enabled: hasAccess });
   const adminLogin = trpc.auth.adminLogin.useMutation({
-    onSuccess: () => {
+    onSuccess: async ({ sessionToken }) => {
       setPassword("");
-      toast.success("Acesso liberado.");
-      window.location.assign("/painel");
+      sessionStorage.setItem("altixdev-admin-session", sessionToken);
+      localStorage.setItem("altixdev-admin-session", sessionToken);
+      const status = await adminStatus.refetch();
+      if (status.data?.authenticated) {
+        toast.success("Acesso liberado.");
+        return;
+      }
+      toast.error("Não foi possível confirmar a sessão. Tente novamente.");
     },
     onError: () => toast.error("E-mail ou senha inválidos."),
   });
   const adminLogout = trpc.auth.adminLogout.useMutation({
     onSuccess: () => {
+      sessionStorage.removeItem("altixdev-admin-session");
+      localStorage.removeItem("altixdev-admin-session");
       utils.auth.adminStatus.invalidate();
       utils.leads.list.invalidate();
       toast.success("Sessão encerrada.");
@@ -49,6 +57,14 @@ export default function LeadDashboard() {
   });
 
   if (adminStatus.isLoading) return <div className="min-h-screen bg-[#071326] text-white grid place-items-center font-medium">Verificando acesso…</div>;
+
+  if (adminStatus.isError) {
+    return (
+      <main className="min-h-screen bg-[#071326] text-white grid place-items-center px-6">
+        <section className="max-w-md text-center"><ShieldCheck className="mx-auto text-[#8AB6FF]" size={40} /><h1 className="mt-5 font-serif text-4xl">Não foi possível verificar o acesso.</h1><p className="mt-4 text-slate-300">Atualize a página e tente entrar novamente. Se o problema continuar, limpe os dados do navegador deste site.</p><button onClick={() => adminStatus.refetch()} className="mt-8 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#071326]">Tentar novamente</button></section>
+      </main>
+    );
+  }
 
   if (!hasAccess) {
     return (

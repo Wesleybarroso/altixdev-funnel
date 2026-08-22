@@ -46,3 +46,19 @@ export function getSessionCookieOptions(
     secure: isSecureRequest(req),
   };
 }
+
+/**
+ * Sessão exclusiva do painel comercial. Em pré-visualizações incorporadas,
+ * navegadores modernos podem exigir cookies particionados para persistir o
+ * contexto seguro. O token de cabeçalho continua como contingência quando o
+ * navegador opta por bloquear qualquer cookie de terceiro.
+ */
+export function getAdminSessionCookieOptions(req: Request): CookieOptions {
+  const base = getSessionCookieOptions(req);
+  return {
+    ...base,
+    sameSite: "none",
+    secure: base.secure,
+    partitioned: base.secure,
+  };
+}

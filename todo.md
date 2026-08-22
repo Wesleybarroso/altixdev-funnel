@@ -29,4 +29,8 @@
 - [x] Corrigir a atualização de sessão e encaminhar o administrador ao painel após login válido.
 - [x] Criar teste de regressão para o status administrativo após autenticação.
 - [x] Validar o fluxo completo de login, da credencial ao status administrativo liberado.
-- [ ] Salvar o checkpoint corrigido do fluxo de login.
+- [x] Salvar o checkpoint corrigido do fluxo de login.
+- [x] Diagnosticar por que o navegador não mantém ou não envia a sessão administrativa após o login.
+- [x] Ajustar os atributos do cookie e o fluxo de sessão para funcionar no ambiente publicado e em pré-visualizações.
+- [x] Validar o login completo por verificação HTTP ponta a ponta, incluindo o token persistido que libera o status administrativo.
+- [ ] Salvar a correção definitiva do login.

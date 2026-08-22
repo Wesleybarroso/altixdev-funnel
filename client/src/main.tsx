@@ -34,15 +34,21 @@ const trpcClient = trpc.createClient({
         // session into sessionStorage so we can forward it as a Bearer token.
         // The regular OAuth cookie flow keeps working and takes priority server-side.
         try {
+          const headers: Record<string, string> = {};
+          const adminToken = sessionStorage.getItem("altixdev-admin-session") || localStorage.getItem("altixdev-admin-session");
+          if (adminToken) {
+            headers["x-altixdev-admin-session"] = adminToken;
+          }
           const raw = sessionStorage.getItem("manus-cookie");
           if (raw) {
             const prefix = `${COOKIE_NAME}=`;
             const pair = raw.split(";").find(s => s.trim().startsWith(prefix));
             const token = pair?.trim().slice(prefix.length);
             if (token) {
-              return { Authorization: `Bearer ${token}` };
+              headers.Authorization = `Bearer ${token}`;
             }
           }
+          return headers;
         } catch {
           // sessionStorage unavailable
         }
