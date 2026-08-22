@@ -43,7 +43,7 @@
 - [ ] Validar visualmente as configurações e exportações e salvar o checkpoint atualizado.
 - [x] Definir credenciais e contratos seguros para Google Sheets, PostgreSQL e ntfy.
 - [x] Criar gestão de integrações no painel, com configuração, teste, ativação, edição e exclusão quando aplicável.
-- [ ] Sincronizar dados de lead e atualizações comerciais com Google Sheets e PostgreSQL configurados.
+- [x] Sincronizar dados de lead e atualizações comerciais com Google Sheets e PostgreSQL configurados, com ativação automática opcional e sincronização manual.
 - [x] Enviar notificações ntfy sobre novos leads, atualizações, exportações e falhas de conexão.
 - [x] Exibir status e última verificação das integrações no painel.
 - [ ] Testar integrações, notificações e proteções administrativas antes do checkpoint final.
@@ -62,3 +62,10 @@
 - [ ] Validar Google Analytics, Google Sheets, PostgreSQL e ntfy com as credenciais reais do proprietário, sem registrar segredos em logs.
 - [x] Cobrir no router os fluxos de criar, editar, excluir, testar e enviar lead por webhook, sem expor segredos e com registro de eventos.
 - [x] Cobrir a exportação CSV/JSON de leads e logs, incluindo o registro de `logs.recordExport`.
+- [x] Reiniciar o servidor de desenvolvimento após indisponibilidade reportada e confirmar a recuperação do painel.
+- [x] Atualizar a linha existente no Google Sheets por `source_lead_id`, sem duplicar o lead em sincronizações posteriores.
+- [x] Cobrir em teste a atualização de lead já sincronizado no Google Sheets e a ausência de duplicidade.
+- [x] Testar `syncLeadToGoogleSheets` com a API Google Sheets simulada para confirmar `values.update` em leads existentes e `values.append` em novos leads.
+- [x] Refinar títulos, mensagens, tags e codificação das notificações ntfy por tipo de evento.
+- [ ] Enviar um novo teste ntfy no celular para confirmar a nova aparência, os ícones por evento e a codificação correta.
+- [x] Corrigir o envio específico do botão de teste ntfy para usar texto ASCII profissional e o novo formato JSON.

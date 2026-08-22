@@ -25,10 +25,12 @@ export default function DirectCrmIntegrations() {
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [sheetName, setSheetName] = useState("Leads");
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleAutoSync, setGoogleAutoSync] = useState(false);
   const [postgresConnection, setPostgresConnection] = useState("");
   const [postgresTable, setPostgresTable] = useState("altixdev_leads");
   const [postgresSsl, setPostgresSsl] = useState(true);
   const [postgresEnabled, setPostgresEnabled] = useState(false);
+  const [postgresAutoSync, setPostgresAutoSync] = useState(false);
   const [analyticsCredential, setAnalyticsCredential] = useState("");
   const [analyticsPropertyId, setAnalyticsPropertyId] = useState("");
   const [analyticsMeasurementId, setAnalyticsMeasurementId] = useState("");
@@ -38,8 +40,8 @@ export default function DirectCrmIntegrations() {
   useEffect(() => {
     const google = directQuery.data?.googleSheets;
     const postgres = directQuery.data?.postgres;
-    if (google) { setSpreadsheetId(google.spreadsheetId ?? ""); setSheetName(google.sheetName ?? "Leads"); setGoogleEnabled(google.enabled); }
-    if (postgres) { setPostgresTable(postgres.tableName ?? "altixdev_leads"); setPostgresSsl(Boolean(postgres.ssl)); setPostgresEnabled(postgres.enabled); }
+    if (google) { setSpreadsheetId(google.spreadsheetId ?? ""); setSheetName(google.sheetName ?? "Leads"); setGoogleEnabled(google.enabled); setGoogleAutoSync(google.autoSync); }
+    if (postgres) { setPostgresTable(postgres.tableName ?? "altixdev_leads"); setPostgresSsl(Boolean(postgres.ssl)); setPostgresEnabled(postgres.enabled); setPostgresAutoSync(postgres.autoSync); }
   }, [directQuery.data]);
 
   useEffect(() => {
@@ -78,21 +80,21 @@ export default function DirectCrmIntegrations() {
   return <section className="mt-6 grid gap-6 xl:grid-cols-2">
     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,.04)]">
       <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Table2 size={18} className="text-[#1D4ED8]" /><h2 className="font-serif text-2xl">Google Sheets</h2></div><p className="mt-2 text-sm leading-6 text-slate-500">Grave uma cópia estruturada dos leads em uma planilha compartilhada com a conta de serviço.</p></div><StatusBadge active={google?.enabled} /></div>
-      <form onSubmit={event => { event.preventDefault(); saveGoogle.mutate({ serviceAccountJson: googleCredential || undefined, spreadsheetId, sheetName, enabled: googleEnabled }); }} className="mt-6 space-y-4">
+      <form onSubmit={event => { event.preventDefault(); saveGoogle.mutate({ serviceAccountJson: googleCredential || undefined, spreadsheetId, sheetName, enabled: googleEnabled, autoSync: googleAutoSync }); }} className="mt-6 space-y-4">
         <Field label="ID da planilha"><input required value={spreadsheetId} onChange={event => setSpreadsheetId(event.target.value)} placeholder="1AbC..." /></Field>
         <Field label="Aba da planilha"><input required value={sheetName} onChange={event => setSheetName(event.target.value)} placeholder="Leads" /></Field>
         <Field label={<>JSON da conta de serviço <SensitiveHint configured={google?.hasCredential} /></>}><textarea value={googleCredential} onChange={event => setGoogleCredential(event.target.value)} className="min-h-28 font-mono text-xs" placeholder='{"type":"service_account", ...}' /></Field>
-        <Toggle checked={googleEnabled} onChange={setGoogleEnabled}>Ativar Google Sheets</Toggle>
+        <div className="grid gap-3 sm:grid-cols-2"><Toggle checked={googleEnabled} onChange={setGoogleEnabled}>Ativar Google Sheets</Toggle><Toggle checked={googleAutoSync} onChange={setGoogleAutoSync}>Sincronizar automaticamente</Toggle></div>
         <ActionButtons savePending={saveGoogle.isPending} configured={google?.configured} testing={testConnection.isPending} onTest={() => testConnection.mutate({ provider: "google_sheets" })} />
       </form><StatusLine value={google?.lastCheckAt} message={google?.lastMessage} />
     </article>
 
     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,.04)]">
       <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-2"><Database size={18} className="text-[#1D4ED8]" /><h2 className="font-serif text-2xl">PostgreSQL</h2></div><p className="mt-2 text-sm leading-6 text-slate-500">Sincronize o lead com uma tabela externa. O painel cria e atualiza a tabela escolhida sem expor a senha.</p></div><StatusBadge active={postgres?.enabled} /></div>
-      <form onSubmit={event => { event.preventDefault(); savePostgres.mutate({ connectionString: postgresConnection || undefined, tableName: postgresTable, ssl: postgresSsl, enabled: postgresEnabled }); }} className="mt-6 space-y-4">
+      <form onSubmit={event => { event.preventDefault(); savePostgres.mutate({ connectionString: postgresConnection || undefined, tableName: postgresTable, ssl: postgresSsl, enabled: postgresEnabled, autoSync: postgresAutoSync }); }} className="mt-6 space-y-4">
         <Field label={<>String de conexão <SensitiveHint configured={postgres?.hasCredential} /></>}><input type="password" value={postgresConnection} onChange={event => setPostgresConnection(event.target.value)} placeholder="postgresql://usuario:senha@host:5432/banco" /></Field>
         <Field label="Tabela de destino"><input required value={postgresTable} onChange={event => setPostgresTable(event.target.value)} placeholder="altixdev_leads" /></Field>
-        <div className="grid gap-3 sm:grid-cols-2"><Toggle checked={postgresSsl} onChange={setPostgresSsl}>Exigir SSL</Toggle><Toggle checked={postgresEnabled} onChange={setPostgresEnabled}>Ativar PostgreSQL</Toggle></div>
+        <div className="grid gap-3 sm:grid-cols-3"><Toggle checked={postgresSsl} onChange={setPostgresSsl}>Exigir SSL</Toggle><Toggle checked={postgresEnabled} onChange={setPostgresEnabled}>Ativar PostgreSQL</Toggle><Toggle checked={postgresAutoSync} onChange={setPostgresAutoSync}>Sincronizar automaticamente</Toggle></div>
         <ActionButtons savePending={savePostgres.isPending} configured={postgres?.configured} testing={testConnection.isPending} onTest={() => testConnection.mutate({ provider: "postgres" })} />
       </form><StatusLine value={postgres?.lastCheckAt} message={postgres?.lastMessage} prefix={postgres?.host ? `Destino: ${postgres.host} · ` : ""} />
     </article>

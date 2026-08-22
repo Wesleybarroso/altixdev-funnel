@@ -3,8 +3,8 @@ import { Client } from "pg";
 import type { Lead } from "../drizzle/schema";
 import { decryptWebhookValue, validateWebhookUrl } from "./webhookService";
 
-export type GoogleSheetsConfig = { serviceAccountJson: string; spreadsheetId: string; sheetName: string };
-export type PostgresConfig = { connectionString: string; tableName: string; ssl: boolean };
+export type GoogleSheetsConfig = { serviceAccountJson: string; spreadsheetId: string; sheetName: string; autoSync?: boolean };
+export type PostgresConfig = { connectionString: string; tableName: string; ssl: boolean; autoSync?: boolean };
 
 const headers = ["source_lead_id", "name", "email", "phone", "company", "stage", "priority", "source", "objective", "current_channel", "bottleneck", "urgency", "diagnostic_summary", "notes", "next_step", "consent", "created_at", "updated_at"];
 
@@ -22,6 +22,11 @@ function parsePostgresConfig(ciphertext: string): PostgresConfig {
 
 function rowFromLead(lead: Lead) {
   return [lead.id, lead.name, lead.email, lead.phone, lead.company ?? "", lead.stage, lead.priority, lead.source, lead.objective, lead.currentChannel, lead.bottleneck, lead.urgency, lead.diagnosticSummary, lead.notes ?? "", lead.nextStep ?? "", lead.consent ? "true" : "false", lead.createdAt.toISOString(), lead.updatedAt.toISOString()];
+}
+
+export function findGoogleSheetLeadRow(values: unknown[][] | null | undefined, leadId: number) {
+  const index = values?.findIndex(row => String(row?.[0] ?? "").trim() === String(leadId)) ?? -1;
+  return index >= 0 ? index + 2 : null;
 }
 
 function safeSheetName(name: string) {
@@ -43,13 +48,13 @@ export function validateGoogleConfig(config: GoogleSheetsConfig) {
   } catch {
     throw new Error("A credencial Google deve ser um JSON válido de conta de serviço.");
   }
-  return { serviceAccountJson: config.serviceAccountJson.trim(), spreadsheetId: config.spreadsheetId.trim(), sheetName: config.sheetName.trim() };
+  return { serviceAccountJson: config.serviceAccountJson.trim(), spreadsheetId: config.spreadsheetId.trim(), sheetName: config.sheetName.trim(), autoSync: Boolean(config.autoSync) };
 }
 
 export function validatePostgresConfig(config: PostgresConfig) {
   const connection = new URL(config.connectionString);
   if (!["postgres:", "postgresql:"].includes(connection.protocol)) throw new Error("A conexão PostgreSQL deve iniciar com postgres:// ou postgresql://.");
-  return { connectionString: config.connectionString.trim(), tableName: safeTableName(config.tableName || "altixdev_leads"), ssl: Boolean(config.ssl) };
+  return { connectionString: config.connectionString.trim(), tableName: safeTableName(config.tableName || "altixdev_leads"), ssl: Boolean(config.ssl), autoSync: Boolean(config.autoSync) };
 }
 
 async function getSheetsClient(config: GoogleSheetsConfig) {
@@ -68,17 +73,24 @@ export async function testGoogleSheets(ciphertext: string) {
 export async function syncLeadToGoogleSheets(ciphertext: string, lead: Lead) {
   const config = parseGoogleConfig(ciphertext);
   const sheets = await getSheetsClient(config);
-  const range = `'${safeSheetName(config.sheetName).replaceAll("'", "''")}'!A:R`;
-  const firstRow = await sheets.spreadsheets.values.get({ spreadsheetId: config.spreadsheetId, range: `'${safeSheetName(config.sheetName).replaceAll("'", "''")}'!1:1` });
+  const safeName = safeSheetName(config.sheetName).replaceAll("'", "''");
+  const range = `'${safeName}'!A:R`;
+  const firstRow = await sheets.spreadsheets.values.get({ spreadsheetId: config.spreadsheetId, range: `'${safeName}'!1:1` });
   if (!firstRow.data.values?.[0]?.length) {
     await sheets.spreadsheets.values.append({ spreadsheetId: config.spreadsheetId, range, valueInputOption: "RAW", requestBody: { values: [headers] } });
   }
+  const idColumn = await sheets.spreadsheets.values.get({ spreadsheetId: config.spreadsheetId, range: `'${safeName}'!A2:A` });
+  const existingRow = findGoogleSheetLeadRow(idColumn.data.values, lead.id);
+  if (existingRow) {
+    await sheets.spreadsheets.values.update({ spreadsheetId: config.spreadsheetId, range: `'${safeName}'!A${existingRow}:R${existingRow}`, valueInputOption: "RAW", requestBody: { values: [rowFromLead(lead)] } });
+    return { ok: true, updated: true };
+  }
   await sheets.spreadsheets.values.append({ spreadsheetId: config.spreadsheetId, range, valueInputOption: "RAW", requestBody: { values: [rowFromLead(lead)] } });
-  return { ok: true };
+  return { ok: true, updated: false };
 }
 
 function postgresClient(config: PostgresConfig) {
-  return new Client({ connectionString: config.connectionString, ssl: config.ssl ? { rejectUnauthorized: false } : false });
+  return new Client({ connectionString: config.connectionString, ssl: config.ssl ? { rejectUnauthorized: false } : false, connectionTimeoutMillis: 10000 });
 }
 
 export async function testPostgres(ciphertext: string) {

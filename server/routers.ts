@@ -7,7 +7,7 @@ import { getAdminSessionCookieOptions, getSessionCookieOptions } from "./_core/c
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import { createLeadWebhookPayload, createWebhookTestPayload, decryptWebhookValue, encryptWebhookValue, postWebhook, validateWebhookUrl } from "./webhookService";
-import { sendNtfyNotification, validateNtfyConfig } from "./ntfyService";
+import { composeNtfyEvent, sendNtfyNotification, validateNtfyConfig } from "./ntfyService";
 import { syncLeadToGoogleSheets, syncLeadToPostgres, testGoogleSheets, testPostgres, validateGoogleConfig, validatePostgresConfig } from "./directCrmService";
 import { getGoogleAnalyticsOverview, testGoogleAnalytics, validateGoogleAnalyticsConfig } from "./googleAnalyticsService";
 
@@ -33,27 +33,41 @@ async function recordEvent(input: { category: string; eventType: string; status:
     metadata: input.metadata ? JSON.stringify(input.metadata) : null,
   });
   if (input.notify) {
-    void sendNtfyNotification({
-      title: "Altixdev · Pipeline",
-      message: input.message,
-      priority: input.status === "error" ? "high" : "default",
-      tags: input.status === "error" ? ["warning", "altixdev"] : ["briefcase", "altixdev"],
-    });
+    void sendNtfyNotification(composeNtfyEvent(input));
   }
 }
 
 function serializeDirectIntegration(provider: "google_sheets" | "postgres", record: Awaited<ReturnType<typeof getIntegrationConfigByProvider>>) {
-  if (!record) return { provider, configured: false, enabled: false, lastCheckAt: null, lastStatus: null, lastMessage: null };
+  if (!record) return { provider, configured: false, enabled: false, autoSync: false, lastCheckAt: null, lastStatus: null, lastMessage: null };
   try {
     const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as Record<string, unknown>;
     if (provider === "google_sheets") {
-      return { provider, configured: true, enabled: record.enabled, spreadsheetId: String(config.spreadsheetId ?? ""), sheetName: String(config.sheetName ?? ""), hasCredential: Boolean(config.serviceAccountJson), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
+      return { provider, configured: true, enabled: record.enabled, autoSync: Boolean(config.autoSync), spreadsheetId: String(config.spreadsheetId ?? ""), sheetName: String(config.sheetName ?? ""), hasCredential: Boolean(config.serviceAccountJson), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
     }
     const connection = new URL(String(config.connectionString ?? "postgres://invalid"));
-    return { provider, configured: true, enabled: record.enabled, host: connection.host, tableName: String(config.tableName ?? "altixdev_leads"), ssl: Boolean(config.ssl), hasCredential: Boolean(config.connectionString), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
+    return { provider, configured: true, enabled: record.enabled, autoSync: Boolean(config.autoSync), host: connection.host, tableName: String(config.tableName ?? "altixdev_leads"), ssl: Boolean(config.ssl), hasCredential: Boolean(config.connectionString), lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: record.lastMessage };
   } catch {
-    return { provider, configured: true, enabled: false, lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: "Configuração indisponível. Edite e salve novamente." };
+    return { provider, configured: true, enabled: false, autoSync: false, lastCheckAt: record.lastCheckAt, lastStatus: record.lastStatus, lastMessage: "Configuração indisponível. Edite e salve novamente." };
   }
+}
+
+async function syncEnabledDirectIntegrations(lead: NonNullable<Awaited<ReturnType<typeof getLeadById>>>, trigger: "created" | "updated") {
+  const providers: Array<"google_sheets" | "postgres"> = ["google_sheets", "postgres"];
+  const records = await Promise.all(providers.map(async provider => ({ provider, record: await getIntegrationConfigByProvider(provider) })));
+  await Promise.all(records.map(async ({ provider, record }) => {
+    if (!record?.enabled) return;
+    try {
+      const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as { autoSync?: boolean };
+      if (!config.autoSync) return;
+      const result = provider === "google_sheets" ? await syncLeadToGoogleSheets(record.configCiphertext, lead) : await syncLeadToPostgres(record.configCiphertext, lead);
+      if (!result.ok) throw new Error("Sincronização não concluída.");
+      await recordIntegrationCheck(provider, 200, "Sincronização automática concluída.");
+      await recordEvent({ category: "export", eventType: `${provider}.lead_auto_synced`, status: "success", message: `Lead #${lead.id} sincronizado automaticamente com ${provider === "google_sheets" ? "Google Sheets" : "PostgreSQL"}.`, metadata: { provider, leadId: lead.id, trigger } });
+    } catch {
+      await recordIntegrationCheck(provider, null, "Falha na sincronização automática.");
+      await recordEvent({ category: "export", eventType: `${provider}.lead_auto_synced`, status: "error", message: `Falha ao sincronizar automaticamente o lead #${lead.id} com ${provider === "google_sheets" ? "Google Sheets" : "PostgreSQL"}.`, metadata: { provider, leadId: lead.id, trigger }, notify: true });
+    }
+  }));
 }
 
 function serializeGoogleAnalytics(record: Awaited<ReturnType<typeof getIntegrationConfigByProvider>>) {
@@ -161,6 +175,8 @@ export const appRouter = router({
         metadata: { leadId: id, source: "landing-page", objective: input.objective },
         notify: true,
       });
+      const lead = await getLeadById(id);
+      if (lead) await syncEnabledDirectIntegrations(lead, "created");
 
       return { id, diagnosticSummary };
     }),
@@ -198,6 +214,8 @@ export const appRouter = router({
           metadata: { leadId: id, fields: Object.keys(changes) },
           notify: true,
         });
+        const lead = await getLeadById(id);
+        if (lead) await syncEnabledDirectIntegrations(lead, "updated");
         return { success: true } as const;
       }),
   }),
@@ -226,7 +244,7 @@ export const appRouter = router({
       return { googleSheets: serializeDirectIntegration("google_sheets", googleSheets), postgres: serializeDirectIntegration("postgres", postgres) };
     }),
     saveGoogleSheets: adminProcedure
-      .input(z.object({ serviceAccountJson: z.string().max(120000).optional(), spreadsheetId: z.string().max(256), sheetName: z.string().max(100), enabled: z.boolean() }))
+      .input(z.object({ serviceAccountJson: z.string().max(120000).optional(), spreadsheetId: z.string().max(256), sheetName: z.string().max(100), enabled: z.boolean(), autoSync: z.boolean().default(false) }))
       .mutation(async ({ input }) => {
         const current = await getIntegrationConfigByProvider("google_sheets");
         let existingCredential = "";
@@ -235,16 +253,16 @@ export const appRouter = router({
         }
         let config;
         try {
-          config = validateGoogleConfig({ serviceAccountJson: input.serviceAccountJson?.trim() || existingCredential, spreadsheetId: input.spreadsheetId, sheetName: input.sheetName });
+          config = validateGoogleConfig({ serviceAccountJson: input.serviceAccountJson?.trim() || existingCredential, spreadsheetId: input.spreadsheetId, sheetName: input.sheetName, autoSync: input.autoSync });
         } catch (error) {
           throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Configuração Google Sheets inválida." });
         }
         await upsertIntegrationConfig({ provider: "google_sheets", configCiphertext: encryptWebhookValue(JSON.stringify(config)), enabled: input.enabled });
-        await recordEvent({ category: "integration", eventType: "google_sheets.configured", status: "success", message: "Configuração Google Sheets atualizada.", metadata: { spreadsheetId: config.spreadsheetId, sheetName: config.sheetName, enabled: input.enabled } });
+        await recordEvent({ category: "integration", eventType: "google_sheets.configured", status: "success", message: "Configuração Google Sheets atualizada.", metadata: { spreadsheetId: config.spreadsheetId, sheetName: config.sheetName, enabled: input.enabled, autoSync: config.autoSync } });
         return { success: true } as const;
       }),
     savePostgres: adminProcedure
-      .input(z.object({ connectionString: z.string().max(4000).optional(), tableName: z.string().max(63), ssl: z.boolean(), enabled: z.boolean() }))
+      .input(z.object({ connectionString: z.string().max(4000).optional(), tableName: z.string().max(63), ssl: z.boolean(), enabled: z.boolean(), autoSync: z.boolean().default(false) }))
       .mutation(async ({ input }) => {
         const current = await getIntegrationConfigByProvider("postgres");
         let existingConnection = "";
@@ -253,12 +271,12 @@ export const appRouter = router({
         }
         let config;
         try {
-          config = validatePostgresConfig({ connectionString: input.connectionString?.trim() || existingConnection, tableName: input.tableName || "altixdev_leads", ssl: input.ssl });
+          config = validatePostgresConfig({ connectionString: input.connectionString?.trim() || existingConnection, tableName: input.tableName || "altixdev_leads", ssl: input.ssl, autoSync: input.autoSync });
         } catch (error) {
           throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Configuração PostgreSQL inválida." });
         }
         await upsertIntegrationConfig({ provider: "postgres", configCiphertext: encryptWebhookValue(JSON.stringify(config)), enabled: input.enabled });
-        await recordEvent({ category: "integration", eventType: "postgres.configured", status: "success", message: "Configuração PostgreSQL atualizada.", metadata: { host: new URL(config.connectionString).host, tableName: config.tableName, enabled: input.enabled } });
+        await recordEvent({ category: "integration", eventType: "postgres.configured", status: "success", message: "Configuração PostgreSQL atualizada.", metadata: { host: new URL(config.connectionString).host, tableName: config.tableName, enabled: input.enabled, autoSync: config.autoSync } });
         return { success: true } as const;
       }),
     test: adminProcedure.input(z.object({ provider: directProviderSchema })).mutation(async ({ input }) => {
@@ -377,9 +395,9 @@ export const appRouter = router({
         await upsertIntegrationConfig({ provider: "ntfy", configCiphertext: encryptWebhookValue(JSON.stringify(config)), enabled: input.enabled });
         await recordEvent({ category: "integration", eventType: "ntfy.configured", status: "success", message: "Configuração ntfy atualizada.", metadata: { enabled: input.enabled, host: new URL(config.serverUrl).host } });
         return { success: true } as const;
-      }),
+    }),
     test: adminProcedure.mutation(async () => {
-      const result = await sendNtfyNotification({ title: "Altixdev · Teste de notificação", message: "A conexão direta entre o painel e seu ntfy está funcionando.", priority: "default", tags: ["heavy_check_mark", "altixdev"] });
+      const result = await sendNtfyNotification(composeNtfyEvent({ eventType: "ntfy.tested", status: "success", message: "Conexao com o painel confirmada. Alertas de leads, CRM e integracoes estao prontos." }));
       await recordEvent({ category: "integration", eventType: "ntfy.tested", status: result.ok ? "success" : "error", message: result.ok ? "Teste de notificação ntfy enviado." : "Falha ao testar a notificação ntfy.", metadata: { status: result.status } });
       return result;
     }),

@@ -17,6 +17,7 @@ const databaseMocks = vi.hoisted(() => ({
 }));
 
 const ntfyMocks = vi.hoisted(() => ({
+  composeNtfyEvent: vi.fn((input: { message: string }) => ({ title: "Altixdev · Teste", message: input.message })),
   sendNtfyNotification: vi.fn(),
   validateNtfyConfig: vi.fn(),
 }));
