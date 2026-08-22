@@ -113,3 +113,5 @@
 - [x] Validar objetivamente os textos visíveis da landing em um idioma não português.
 - [x] Revalidar visualmente a landing com o seletor definido para um idioma não português e registrar hero, formulário e rodapé traduzidos.
 - [x] Inspecionar explicitamente as capturas em inglês para confirmar hero, formulário e rodapé traduzidos em desktop e celular.
+- [x] Substituir o seletor nativo de idiomas por um menu visual refinado, acessível e responsivo.
+- [ ] Validar visualmente o novo menu de idiomas em desktop e celular e publicar a melhoria no GitHub privado.

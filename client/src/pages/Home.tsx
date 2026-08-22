@@ -1,5 +1,5 @@
-import { ArrowRight, Bot, Check, CheckCircle2, CircleDotDashed, Code2, Globe2, MessageCircle, MoveRight, ShieldCheck, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, Bot, Check, CheckCircle2, ChevronDown, CircleDotDashed, Code2, Globe2, MessageCircle, MoveRight, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { DEFAULT_LOCALE, emailPlaceholders, getSiteCopy, isLocale, localeOptions, privateAccessLabels, SITE_CONTACT_EMAIL, type Locale } from "@/lib/siteI18n";
@@ -33,10 +33,13 @@ function getInitialLocale(): Locale {
 
 export default function Home() {
   const [locale, setLocale] = useState<Locale>(getInitialLocale);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
   const copy = getSiteCopy(locale);
   const questionSteps = copy.diagnostic.questionSteps;
+  const selectedLocale = localeOptions.find(option => option.code === locale) ?? localeOptions[0];
   const analyticsTag = trpc.analytics.publicTag.useQuery(undefined, { refetchOnWindowFocus: false });
 
   useEffect(() => {
@@ -59,6 +62,24 @@ export default function Home() {
     script.dataset.altixdevGa = measurementId;
     document.head.appendChild(script);
   }, [analyticsTag.data?.measurementId]);
+
+  useEffect(() => {
+    if (!isLanguageMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) setIsLanguageMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsLanguageMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isLanguageMenuOpen]);
 
   const createLead = trpc.leads.create.useMutation({
     onSuccess: ({ diagnosticSummary }) => {
@@ -89,6 +110,7 @@ export default function Home() {
     url.searchParams.set("lang", nextLocale);
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     setLocale(nextLocale);
+    setIsLanguageMenuOpen(false);
     setForm(initialForm);
     setStep(0);
   };
@@ -101,13 +123,26 @@ export default function Home() {
           <a href="/" className="flex shrink-0 items-center gap-3" aria-label="Altixdev"><span className="grid h-10 w-10 place-items-center rounded-xl bg-white font-serif text-xl text-[#0B1730]">A</span><span className="font-semibold tracking-tight">altixdev</span></a>
           <div className="hidden gap-7 text-sm text-slate-300 md:flex"><a href="#solucoes" className="hover:text-white">{copy.nav.solutions}</a><a href="#processo" className="hover:text-white">{copy.nav.process}</a><a href="#diagnostico" className="hover:text-white">{copy.nav.diagnostic}</a></div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <label className="relative flex h-10 max-w-[10.5rem] items-center rounded-xl border border-white/15 bg-white/5 pl-8 text-xs text-slate-100 focus-within:ring-2 focus-within:ring-[#8AB6FF] sm:max-w-[12.5rem]">
-              <Globe2 size={14} className="pointer-events-none absolute left-2.5 text-[#AFCBFF]" aria-hidden="true" />
-              <span className="sr-only">{copy.languageLabel}</span>
-              <select value={locale} onChange={event => changeLocale(event.target.value as Locale)} aria-label={copy.languageLabel} className="h-full w-full cursor-pointer appearance-none bg-transparent pr-2 text-xs font-medium outline-none">
-                {localeOptions.map(option => <option key={option.code} value={option.code} className="bg-[#071326] text-white">{option.label}</option>)}
-              </select>
-            </label>
+            <div ref={languageMenuRef} className="relative">
+              <button type="button" onClick={() => setIsLanguageMenuOpen(current => !current)} aria-haspopup="listbox" aria-expanded={isLanguageMenuOpen} aria-label={copy.languageLabel} className={`group relative flex h-10 max-w-[10.5rem] items-center gap-2 overflow-hidden rounded-xl border px-3 text-xs font-semibold text-white outline-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#AFCBFF] sm:max-w-none sm:min-w-[10.75rem] ${isLanguageMenuOpen ? "border-[#9FC1FF] bg-[#16366D]/80 shadow-[0_0_0_3px_rgba(82,137,255,.17),0_14px_34px_rgba(29,87,209,.24)]" : "border-white/15 bg-white/[.055] hover:border-[#85B0FF]/80 hover:bg-white/[.1] hover:shadow-[0_12px_28px_rgba(8,25,55,.28)]"}`}>
+                <span className={`pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(104,165,255,.27),transparent_42%)] transition-opacity duration-300 ${isLanguageMenuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+                <Globe2 size={15} className="relative shrink-0 text-[#AFCBFF]" aria-hidden="true" />
+                <span className="relative text-left sm:hidden">{locale.toUpperCase()}</span>
+                <span className="relative hidden truncate text-left sm:block">{selectedLocale.label}</span>
+                <ChevronDown size={15} className={`relative ml-auto shrink-0 text-[#AFCBFF] transition-transform duration-200 ${isLanguageMenuOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+              </button>
+              {isLanguageMenuOpen ? <div role="listbox" aria-label={copy.languageLabel} className="absolute right-0 z-50 mt-3 w-[17rem] origin-top-right overflow-hidden rounded-2xl border border-white/15 bg-[#08172E]/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,.42),0_0_0_1px_rgba(126,174,255,.08)] backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2">
+                <div className="border-b border-white/10 px-3 pb-2.5 pt-1.5 text-[10px] font-bold uppercase tracking-[.18em] text-[#AFCBFF]">{copy.languageLabel}</div>
+                <div className="mt-1 max-h-[min(65vh,28rem)] space-y-0.5 overflow-y-auto pr-0.5">{localeOptions.map(option => {
+                  const active = option.code === locale;
+                  return <button key={option.code} type="button" role="option" aria-selected={active} onClick={() => changeLocale(option.code)} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-[#AFCBFF] ${active ? "bg-[linear-gradient(100deg,rgba(47,107,255,.46),rgba(74,126,239,.13))] text-white shadow-[inset_0_0_0_1px_rgba(151,188,255,.36)]" : "text-slate-300 hover:bg-white/[.08] hover:text-white"}`}>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border text-[9px] font-bold tracking-wide ${active ? "border-[#AFCBFF]/70 bg-[#2F6BFF] text-white shadow-[0_0_18px_rgba(74,137,255,.52)]" : "border-white/10 bg-white/[.045] text-slate-400 group-hover:border-white/20 group-hover:text-slate-200"}`}>{option.code.split("-")[0].toUpperCase()}</span>
+                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    {active ? <Check size={15} className="shrink-0 text-[#B8D3FF]" aria-hidden="true" /> : <span className="h-2 w-2 shrink-0 rounded-full bg-slate-600/70 transition group-hover:bg-[#8AB6FF]" aria-hidden="true" />}
+                  </button>;
+                })}</div>
+              </div> : null}
+            </div>
             <button onClick={scrollToDiagnostic} className="hidden rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0B1730] transition hover:-translate-y-0.5 sm:inline-flex">{copy.nav.start}</button>
           </div>
         </nav>
