@@ -1,16 +1,16 @@
 export const SITE_CONTACT_EMAIL = "contato@altixdev.com.br";
 
 export const localeOptions = [
-  { code: "pt-BR", label: "Português (Brasil)" },
-  { code: "en-US", label: "English (US)" },
-  { code: "es", label: "Español" },
-  { code: "pt-PT", label: "Português (Portugal)" },
-  { code: "de", label: "Deutsch" },
-  { code: "nl", label: "Nederlands" },
-  { code: "en-GB", label: "English (UK)" },
-  { code: "ru", label: "Русский" },
-  { code: "nb", label: "Norsk" },
-  { code: "ga", label: "Gaeilge" },
+  { code: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
+  { code: "en-US", label: "English (US)", flag: "🇺🇸" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "pt-PT", label: "Português (Portugal)", flag: "🇵🇹" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
+  { code: "en-GB", label: "English (UK)", flag: "🇬🇧" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "nb", label: "Norsk", flag: "🇳🇴" },
+  { code: "ga", label: "Gaeilge", flag: "🇮🇪" },
 ] as const;
 
 export type Locale = (typeof localeOptions)[number]["code"];

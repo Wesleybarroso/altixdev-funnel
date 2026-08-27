@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Altixdev</title>
+  <desc id="desc">Símbolo A azul e branco da Altixdev</desc>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="6" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#142E61"/>
+      <stop offset="1" stop-color="#071326"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="19" y1="47" x2="45" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78A6FF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M32 10 12.5 51h9.2l3.5-7.9h13.6l3.5 7.9h9.2L32 10Z" fill="url(#mark)" filter="url(#glow)"/>
+  <path d="m28.3 35.4 3.7-9.2 3.7 9.2h-7.4Z" fill="#0B1730"/>
+  <path d="M11 51.5h42" stroke="#2F6BFF" stroke-width="2" stroke-linecap="round" opacity=".9"/>
+</svg>

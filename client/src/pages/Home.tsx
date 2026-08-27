@@ -133,10 +133,10 @@ export default function Home() {
               </button>
               {isLanguageMenuOpen ? <div role="listbox" aria-label={copy.languageLabel} className="absolute right-0 z-50 mt-3 w-[17rem] origin-top-right overflow-hidden rounded-2xl border border-white/15 bg-[#08172E]/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,.42),0_0_0_1px_rgba(126,174,255,.08)] backdrop-blur-xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2">
                 <div className="border-b border-white/10 px-3 pb-2.5 pt-1.5 text-[10px] font-bold uppercase tracking-[.18em] text-[#AFCBFF]">{copy.languageLabel}</div>
-                <div className="mt-1 max-h-[min(65vh,28rem)] space-y-0.5 overflow-y-auto pr-0.5">{localeOptions.map(option => {
+                <div className="language-menu-scrollbar mt-1 max-h-[min(65vh,28rem)] space-y-0.5 overflow-y-auto pr-0.5">{localeOptions.map(option => {
                   const active = option.code === locale;
                   return <button key={option.code} type="button" role="option" aria-selected={active} onClick={() => changeLocale(option.code)} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm outline-none transition duration-150 focus-visible:ring-2 focus-visible:ring-[#AFCBFF] ${active ? "bg-[linear-gradient(100deg,rgba(47,107,255,.46),rgba(74,126,239,.13))] text-white shadow-[inset_0_0_0_1px_rgba(151,188,255,.36)]" : "text-slate-300 hover:bg-white/[.08] hover:text-white"}`}>
-                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border text-[9px] font-bold tracking-wide ${active ? "border-[#AFCBFF]/70 bg-[#2F6BFF] text-white shadow-[0_0_18px_rgba(74,137,255,.52)]" : "border-white/10 bg-white/[.045] text-slate-400 group-hover:border-white/20 group-hover:text-slate-200"}`}>{option.code.split("-")[0].toUpperCase()}</span>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border text-[17px] leading-none ${active ? "border-[#AFCBFF]/70 bg-[#2F6BFF] shadow-[0_0_18px_rgba(74,137,255,.52)]" : "border-white/10 bg-white/[.045] group-hover:border-white/20"}`} role="img" aria-label={option.label}>{option.flag}</span>
                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
                     {active ? <Check size={15} className="shrink-0 text-[#B8D3FF]" aria-hidden="true" /> : <span className="h-2 w-2 shrink-0 rounded-full bg-slate-600/70 transition group-hover:bg-[#8AB6FF]" aria-hidden="true" />}
                   </button>;
