@@ -314,7 +314,12 @@ export const appRouter = router({
   analytics: router({
     get: adminProcedure.query(async () => serializeGoogleAnalytics(await getIntegrationConfigByProvider("google_analytics"))),
     publicTag: publicProcedure.query(async () => {
-      const record = await getIntegrationConfigByProvider("google_analytics");
+      let record;
+      try {
+        record = await getIntegrationConfigByProvider("google_analytics");
+      } catch {
+        return { measurementId: null };
+      }
       if (!record || !record.enabled) return { measurementId: null };
       try {
         const config = JSON.parse(decryptWebhookValue(record.configCiphertext)) as { measurementId?: string | null };

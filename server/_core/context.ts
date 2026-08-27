@@ -2,6 +2,7 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { User } from "../../drizzle/schema";
 import { hasAdminSession } from "../adminAuth";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -15,17 +16,28 @@ export async function createContext(
 ): Promise<TrpcContext> {
   let user: User | null = null;
 
+  if (ENV.oAuthServerUrl) {
+    try {
+      user = await sdk.authenticateRequest(opts.req);
+    } catch {
+      // OAuth authentication is optional for public procedures.
+      user = null;
+    }
+  }
+
+  let passwordAdmin = false;
   try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
+    passwordAdmin = await hasAdminSession(opts.req);
+  } catch {
+    // The public landing page and login screen must still render when
+    // production session secrets have not been configured yet.
+    passwordAdmin = false;
   }
 
   return {
     req: opts.req,
     res: opts.res,
     user,
-    passwordAdmin: await hasAdminSession(opts.req),
+    passwordAdmin,
   };
 }
